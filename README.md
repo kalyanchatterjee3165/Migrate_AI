@@ -46,8 +46,8 @@ Agent: Migration complete. 200 rows written to analytics.users in BigQuery.
 **1. Clone the repo**
 
 ```bash
-git clone https://github.com/<your-username>/migrate-ai.git
-cd migrate-ai
+git clone https://github.com/kalyanchatterjee3165/Migrate_AI.git
+cd Migrate_AI
 ```
 
 **2. Create and activate a virtual environment**
