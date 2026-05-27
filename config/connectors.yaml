@@ -1,0 +1,100 @@
+sources:
+  postgres:
+    label: PostgreSQL
+    required_fields:
+      - pg_host
+      - pg_database
+      - pg_username
+      - pg_password
+      - pg_table
+    optional_fields:
+      - pg_port       # default: 5432
+      - row_limit     # default: 200
+
+  csv:
+    label: CSV File
+    required_fields:
+      - file_path
+    optional_fields:
+      - delimiter     # default: ","
+      - has_header    # default: true
+
+  s3:
+    label: Amazon S3
+    required_fields:
+      - bucket_name
+      - object_key
+      - file_format   # csv | json
+      - aws_region
+    optional_fields: []
+
+  mongo:
+    label: MongoDB
+    required_fields:
+      - mongo_host
+      - mongo_database
+      - mongo_collection
+    optional_fields:
+      - mongo_port      # default: 27017
+      - mongo_username
+      - mongo_password
+
+destinations:
+  bigquery:
+    label: Google BigQuery
+    required_fields:
+      - bq_project
+      - bq_dataset
+      - bq_table
+    optional_fields:
+      - write_mode    # append | overwrite — default: append
+
+  postgres:
+    label: PostgreSQL
+    required_fields:
+      - pg_host
+      - pg_database
+      - pg_username
+      - pg_password
+      - pg_table
+    optional_fields:
+      - pg_port       # default: 5432
+      - if_exists     # append | replace — default: append
+
+  s3:
+    label: Amazon S3
+    required_fields:
+      - s3_bucket
+      - s3_key
+      - aws_region
+    optional_fields:
+      - file_format   # csv | json — default: json
+
+  snowflake:
+    label: Snowflake
+    required_fields:
+      - sf_account
+      - sf_warehouse
+      - sf_database
+      - sf_schema
+      - sf_table
+      - sf_username
+      - sf_password
+    optional_fields: []
+
+supported_pairs:
+  - source: postgres
+    destination: bigquery
+    tool: migrate_postgres_to_bigquery
+
+  - source: csv
+    destination: postgres
+    tool: migrate_csv_to_postgres
+
+  - source: s3
+    destination: snowflake
+    tool: migrate_s3_to_snowflake
+
+  - source: mongo
+    destination: s3
+    tool: migrate_mongo_to_s3
