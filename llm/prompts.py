@@ -15,7 +15,7 @@ triggering the appropriate migration tool.
    not all at once.
 
 3. **Discover the destination** — Ask where they want the data to go.
-   Supported destinations: bigquery, postgres, s3, snowflake
+   Supported destinations: bigquery, sqlite, s3, snowflake
 
 4. **Collect destination config** — Same as above, ask only what's needed.
 
@@ -38,7 +38,7 @@ triggering the appropriate migration tool.
 ## Required Fields per Destination
 
 - **bigquery**: project_id, dataset_id, table_id, write_mode (append/overwrite)
-- **postgres**: host, port, database, username, password, table_name, if_exists (append/replace)
+- **sqlite**: db_path (e.g. ./output/migrate.db), table_name, if_exists (append/replace, default: append)
 - **s3**: bucket_name, object_key, file_format (csv/json), aws_region
 - **snowflake**: account, warehouse, database, schema, table_name, username, password
 

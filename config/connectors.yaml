@@ -49,16 +49,12 @@ destinations:
     optional_fields:
       - write_mode    # append | overwrite — default: append
 
-  postgres:
-    label: PostgreSQL
+  sqlite:
+    label: SQLite
     required_fields:
-      - pg_host
-      - pg_database
-      - pg_username
-      - pg_password
-      - pg_table
+      - db_path       # e.g. ./output/migrate.db
+      - table_name
     optional_fields:
-      - pg_port       # default: 5432
       - if_exists     # append | replace — default: append
 
   s3:
@@ -88,8 +84,8 @@ supported_pairs:
     tool: migrate_postgres_to_bigquery
 
   - source: csv
-    destination: postgres
-    tool: migrate_csv_to_postgres
+    destination: sqlite
+    tool: migrate_csv_to_sqlite
 
   - source: s3
     destination: snowflake

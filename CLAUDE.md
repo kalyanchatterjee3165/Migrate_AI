@@ -17,6 +17,7 @@ No real databases or cloud services are connected.
 - **LLM**: OpenAI GPT-4o via `openai` SDK (tool/function calling)
 - **UI**: Gradio chat interface (`app.py`)
 - **Data generation**: `faker`, `pandas`
+- **Database**: `sqlalchemy` (SQLite destination)
 - **Python**: 3.10+
 
 ---
@@ -142,7 +143,7 @@ message list. `agent.reset()` clears it. Gradio calls `reset()` on the
 | Source    | Destination | Tool name                      |
 |-----------|-------------|-------------------------------|
 | Postgres  | BigQuery    | `migrate_postgres_to_bigquery` |
-| CSV       | Postgres    | `migrate_csv_to_postgres`      |
+| CSV       | SQLite      | `migrate_csv_to_sqlite`        |
 | S3        | Snowflake   | `migrate_s3_to_snowflake`      |
 | MongoDB   | S3          | `migrate_mongo_to_s3`          |
 

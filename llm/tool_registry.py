@@ -80,29 +80,22 @@ class ToolRegistry:
         }
 
     @staticmethod
-    def csv_to_postgres_schema() -> dict:
+    def csv_to_sqlite_schema() -> dict:
         return {
             "type": "object",
             "properties": {
                 "file_path":   {"type": "string",  "description": "Path to the source CSV file"},
                 "delimiter":   {"type": "string",  "description": "CSV delimiter character (default: comma)"},
                 "has_header":  {"type": "boolean", "description": "Whether CSV has a header row (default: true)"},
-                "pg_host":     {"type": "string",  "description": "Postgres host"},
-                "pg_port":     {"type": "integer", "description": "Postgres port (default 5432)"},
-                "pg_database": {"type": "string",  "description": "Postgres database name"},
-                "pg_username": {"type": "string",  "description": "Postgres username"},
-                "pg_password": {"type": "string",  "description": "Postgres password"},
-                "pg_table":    {"type": "string",  "description": "Destination table name"},
+                "db_path":     {"type": "string",  "description": "Path for the SQLite .db file (e.g. ./output/migrate.db)"},
+                "table_name":  {"type": "string",  "description": "Destination table name inside the SQLite database"},
                 "if_exists":   {
                     "type": "string",
                     "enum": ["append", "replace"],
                     "description": "What to do if the table already exists (default: append)",
                 },
             },
-            "required": [
-                "file_path", "pg_host", "pg_database",
-                "pg_username", "pg_password", "pg_table",
-            ],
+            "required": ["file_path", "db_path", "table_name"],
         }
 
     @staticmethod
@@ -157,10 +150,10 @@ class ToolRegistry:
 # ------------------------------------------------------------------
 
 def build_default_registry(
-    migrate_pg_to_bq:     Callable,
-    migrate_csv_to_pg:    Callable,
-    migrate_s3_to_sf:     Callable,
-    migrate_mongo_to_s3:  Callable,
+    migrate_pg_to_bq:      Callable,
+    migrate_csv_to_sqlite: Callable,
+    migrate_s3_to_sf:      Callable,
+    migrate_mongo_to_s3:   Callable,
 ) -> ToolRegistry:
     """
     Instantiate and return a ToolRegistry pre-loaded with all
@@ -181,13 +174,13 @@ def build_default_registry(
     )
 
     registry.register(
-        name="migrate_csv_to_postgres",
+        name="migrate_csv_to_sqlite",
         description=(
-            "Load data from a local CSV file into a PostgreSQL table. "
-            "Use when source is a CSV file and destination is Postgres."
+            "Load data from a local CSV file into a SQLite database table. "
+            "Use when source is a CSV file and destination is SQLite."
         ),
-        parameters=ToolRegistry.csv_to_postgres_schema(),
-        handler=migrate_csv_to_pg,
+        parameters=ToolRegistry.csv_to_sqlite_schema(),
+        handler=migrate_csv_to_sqlite,
     )
 
     registry.register(

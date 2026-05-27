@@ -53,7 +53,10 @@ body, .gradio-container {
 }
 
 /* ── Chatbot container ────────────────────────────────────────── */
-.chatbot {
+.chatbot,
+.chatbot > div,
+.chatbot .wrap,
+.chatbot .scroll-hide {
     background-color: var(--lm-white) !important;
     border: 1px solid rgba(26, 20, 70, 0.15) !important;
     border-radius: 8px !important;
@@ -116,22 +119,200 @@ input[type=text]:focus, textarea:focus {
     outline: none !important;
 }
 
-/* ── Examples ─────────────────────────────────────────────────── */
-.examples-holder {
+/* ── Examples / Quick starts (Gradio 6 uses .dataset) ────────── */
+.dataset {
     background-color: var(--lm-white) !important;
     border: 1px solid rgba(26, 20, 70, 0.12) !important;
     border-radius: 8px !important;
+    overflow: hidden !important;
 }
-.examples-holder .example {
+.dataset table {
+    background-color: var(--lm-white) !important;
+    width: 100% !important;
+}
+.dataset tbody tr {
     background-color: var(--lm-light-gray) !important;
-    color: var(--lm-blue) !important;
-    border: 1px solid rgba(26, 20, 70, 0.18) !important;
-    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
 }
-.examples-holder .example:hover {
+.dataset tbody tr:hover {
     background-color: var(--lm-blue) !important;
+}
+.dataset tbody tr td,
+.dataset tbody tr td * {
+    color: var(--lm-blue) !important;
+    font-size: 0.9rem !important;
+    padding: 10px 14px !important;
+}
+.dataset tbody tr:hover td,
+.dataset tbody tr:hover td * {
     color: var(--lm-yellow) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LOGIN / AUTH PAGE — Liberty Mutual brand palette
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Page background ──────────────────────────────────────────── */
+body:has(.login) {
+    background-color: var(--lm-light-gray) !important;
+    min-height: 100vh !important;
+}
+
+/* ── Card ─────────────────────────────────────────────────────── */
+.login {
+    background-color: var(--lm-white) !important;
+    border-radius: 12px !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(26, 20, 70, 0.08),
+                0 8px 32px rgba(26, 20, 70, 0.12) !important;
+    overflow: hidden !important;  /* lets the header strip sit flush */
+}
+
+/* ── Blue header strip at top of card ────────────────────────── */
+.login::before {
+    content: "migrate.ai" !important;
+    display: block !important;
+    background-color: var(--lm-blue) !important;
+    color: var(--lm-white) !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em !important;
+    padding: 14px 28px !important;
+}
+
+/* ── Title ────────────────────────────────────────────────────── */
+.login h1 {
+    color: var(--lm-blue) !important;
+    font-size: 1.35rem !important;
+    font-weight: 700 !important;
+    margin: 0 0 4px !important;
+}
+
+/* ── Auth message (subtitle) ──────────────────────────────────── */
+.login .auth-message {
+    color: #444 !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 22px !important;
+}
+
+/* ── Labels ───────────────────────────────────────────────────── */
+.login label,
+.login label span {
+    color: var(--lm-text-dark) !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+}
+
+/* ── Placeholders ─────────────────────────────────────────────── */
+.login input::placeholder {
+    color: rgba(26, 20, 70, 0.35) !important;
+}
+
+/* ── Input fields ─────────────────────────────────────────────── */
+.login input[type=text],
+.login input[type=password] {
+    background-color: var(--lm-white) !important;
+    border: 1.5px solid rgba(26, 20, 70, 0.25) !important;
+    border-radius: 6px !important;
+    color: var(--lm-text-dark) !important;
+    padding: 10px 14px !important;
+    width: 100% !important;
+    font-size: 0.95rem !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+.login input[type=text]:focus,
+.login input[type=password]:focus {
     border-color: var(--lm-blue) !important;
+    box-shadow: 0 0 0 3px rgba(26, 20, 70, 0.13) !important;
+    outline: none !important;
+}
+.login input[type=text]:hover,
+.login input[type=password]:hover {
+    border-color: rgba(26, 20, 70, 0.5) !important;
+}
+
+/* ── Primary login button ─────────────────────────────────────── */
+.login button[type=submit],
+.login button.primary {
+    background-color: var(--lm-yellow) !important;
+    color: var(--lm-blue) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    width: 100% !important;
+    padding: 11px 20px !important;
+    margin-top: 18px !important;
+    cursor: pointer !important;
+    letter-spacing: 0.02em !important;
+    transition: background-color 0.15s ease !important;
+}
+.login button[type=submit]:hover,
+.login button.primary:hover {
+    background-color: #E6BB00 !important;
+}
+.login button[type=submit]:active,
+.login button.primary:active {
+    background-color: #D4AC00 !important;
+}
+
+/* ── Secondary / outline buttons ─────────────────────────────── */
+.login button.secondary {
+    background-color: transparent !important;
+    color: var(--lm-blue) !important;
+    border: 1.5px solid var(--lm-blue) !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    padding: 10px 20px !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+.login button.secondary:hover {
+    background-color: var(--lm-blue) !important;
+    color: var(--lm-white) !important;
+}
+
+/* ── Links (Forgot password / Sign up) ───────────────────────── */
+.login a {
+    color: var(--lm-blue) !important;
+    text-decoration: underline !important;
+    font-weight: 500 !important;
+}
+.login a:hover {
+    color: var(--lm-dark-navy) !important;
+    text-decoration-thickness: 2px !important;
+}
+
+/* ── Icons on light background ────────────────────────────────── */
+.login svg,
+.login .icon {
+    color: var(--lm-blue) !important;
+    fill: var(--lm-blue) !important;
+}
+
+/* ── Error messages ───────────────────────────────────────────── */
+.login .error,
+.login [class*="error"] {
+    color: #C0392B !important;
+    background-color: #FDF0EE !important;
+    border: 1px solid rgba(192, 57, 43, 0.25) !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 0.88rem !important;
+    font-weight: 500 !important;
+}
+
+/* ── Success states ───────────────────────────────────────────── */
+.login .success,
+.login [class*="success"] {
+    color: #1E6B3C !important;
+    background-color: #EEF7F2 !important;
+    border: 1px solid rgba(30, 107, 60, 0.25) !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 0.88rem !important;
 }
 
 /* ── Labels ───────────────────────────────────────────────────── */
@@ -193,7 +374,7 @@ from llm.agent import MigrationAgent
 from llm.tool_registry import build_default_registry
 from migrations.executor import (
     migrate_postgres_to_bigquery,
-    migrate_csv_to_postgres,
+    migrate_csv_to_sqlite,
     migrate_s3_to_snowflake,
     migrate_mongo_to_s3,
 )
@@ -203,10 +384,10 @@ from migrations.executor import (
 # ------------------------------------------------------------------
 
 registry = build_default_registry(
-    migrate_pg_to_bq    = migrate_postgres_to_bigquery,
-    migrate_csv_to_pg   = migrate_csv_to_postgres,
-    migrate_s3_to_sf    = migrate_s3_to_snowflake,
-    migrate_mongo_to_s3 = migrate_mongo_to_s3,
+    migrate_pg_to_bq      = migrate_postgres_to_bigquery,
+    migrate_csv_to_sqlite = migrate_csv_to_sqlite,
+    migrate_s3_to_sf      = migrate_s3_to_snowflake,
+    migrate_mongo_to_s3   = migrate_mongo_to_s3,
 )
 
 agent = MigrationAgent(registry=registry)
@@ -286,6 +467,48 @@ with gr.Blocks(title="migrate.ai", css=LM_CSS, js=LM_JS) as demo:
 
 
 if __name__ == "__main__":
+    # ── Liberty Mutual Gradio theme ────────────────────────────────
+    # gr.Blocks(css=...) only reaches the main app page.
+    # The /login page is a separate Gradio route that only responds
+    # to the theme object — so all login colours are set here.
+    lm_theme = gr.themes.Default().set(
+        # Page & container backgrounds
+        body_background_fill="#F4F4F4",
+        block_background_fill="#FFFFFF",
+        panel_background_fill="#FFFFFF",
+        # Primary button → Liberty Yellow
+        button_primary_background_fill="#FFD000",
+        button_primary_background_fill_hover="#E6BB00",
+        button_primary_background_fill_dark="#FFD000",
+        button_primary_text_color="#1A1446",
+        button_primary_text_color_hover="#1A1446",
+        button_primary_border_color="#FFD000",
+        button_primary_border_color_hover="#E6BB00",
+        # Secondary button → outlined Liberty Blue
+        button_secondary_background_fill="#FFFFFF",
+        button_secondary_background_fill_hover="#1A1446",
+        button_secondary_text_color="#1A1446",
+        button_secondary_text_color_hover="#FFFFFF",
+        button_secondary_border_color="#1A1446",
+        # Input fields
+        input_background_fill="#FFFFFF",
+        input_border_color="rgba(26,20,70,0.25)",
+        input_border_color_focus="#1A1446",
+        input_border_color_hover="rgba(26,20,70,0.5)",
+        input_shadow_focus="0 0 0 3px rgba(26,20,70,0.13)",
+        # Text
+        body_text_color="#1A1446",
+        block_title_text_color="#1A1446",
+        block_label_text_color="#1A1446",
+        link_text_color="#1A1446",
+        link_text_color_hover="#002663",
+        link_text_color_active="#002663",
+        link_text_color_visited="#1A1446",
+        # Borders & shadows
+        block_border_color="rgba(26,20,70,0.15)",
+        block_shadow="0 2px 8px rgba(26,20,70,0.08), 0 8px 32px rgba(26,20,70,0.10)",
+    )
+
     demo.launch(
         server_name="0.0.0.0",
         server_port=7860,
@@ -293,4 +516,5 @@ if __name__ == "__main__":
         inbrowser=True,
         auth=(settings.APP_USERNAME, settings.APP_PASSWORD),
         auth_message="migrate.ai — please log in to continue",
+        theme=lm_theme,
     )

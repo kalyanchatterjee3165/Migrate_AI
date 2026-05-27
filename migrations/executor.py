@@ -10,7 +10,7 @@ Each function:
 """
 
 from tools.sources import PostgresSource, CsvSource, S3Source, MongoSource
-from tools.destinations import BigQueryDest, PostgresDest, S3Dest, SnowflakeDest
+from tools.destinations import BigQueryDest, SQLiteDest, S3Dest, SnowflakeDest
 from migrations.validator import MigrationValidator
 
 validator = MigrationValidator()
@@ -24,12 +24,12 @@ def migrate_postgres_to_bigquery(**kwargs) -> dict:
     return _summary("postgres", "bigquery", pre, post, result)
 
 
-def migrate_csv_to_postgres(**kwargs) -> dict:
+def migrate_csv_to_sqlite(**kwargs) -> dict:
     df = CsvSource().fetch(**kwargs)
     pre = validator.pre_check(df)
-    result = PostgresDest().save(df, **kwargs)
+    result = SQLiteDest().save(df, **kwargs)
     post = validator.post_check(df, result["rows_written"])
-    return _summary("csv", "postgres", pre, post, result)
+    return _summary("csv", "sqlite", pre, post, result)
 
 
 def migrate_s3_to_snowflake(**kwargs) -> dict:
