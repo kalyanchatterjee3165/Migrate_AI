@@ -21,3 +21,32 @@ while True:
         print(f"Error: {e}\n")
 
 conn.close()
+
+'''
+-- List all tables (like "show db")
+SELECT name FROM sqlite_master WHERE type='table';
+
+-- See table schema
+PRAGMA table_info(Employee);
+
+-- Select all rows
+SELECT * FROM Employee;
+
+-- Limit results
+SELECT * FROM Employee LIMIT 10;
+
+-- Filter
+SELECT name, email, city FROM Employee WHERE country = 'USA';
+
+-- Count rows
+SELECT COUNT(*) FROM Employee;
+
+-- Sort
+SELECT name, city, country FROM Employee ORDER BY name ASC LIMIT 20;
+
+-- Search
+SELECT * FROM Employee WHERE name LIKE 'J%';
+
+-- Group by
+SELECT country, COUNT(*) as total FROM Employee GROUP BY country ORDER BY total DESC;
+'''
