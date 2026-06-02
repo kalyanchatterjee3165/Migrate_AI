@@ -19,7 +19,7 @@ from migrations.executor import (  # noqa: E402
     migrate_mongo_to_s3,
 )
 
-# ── CSS — all in one block ─────────────────────────────────────────
+# ── SECTION B — CSS (all in one block) ────────────────────────────
 CUSTOM_CSS = """
 <style>
 
@@ -123,6 +123,15 @@ div[class*="block-container"] {
   color: #FFFFFF !important;
 }
 
+/* New Migration button — must be targeted by key */
+[data-testid="stSidebar"] [data-testid="baseButton-secondary"]:last-of-type,
+#reset_btn > button,
+button[kind="secondary"][data-testid*="reset"] {
+  background: #FFD000 !important;
+  color: #1A1446 !important;
+  font-weight: 600 !important;
+}
+
 /* ── 4. CHAT MESSAGES ── */
 
 /* Container background */
@@ -181,7 +190,7 @@ div[class*="block-container"] {
   font-size: 13px !important;
 }
 
-/* Hide avatars */
+/* Hide avatars — we don't need them */
 [data-testid="stChatMessageAvatarAssistant"],
 [data-testid="stChatMessageAvatarUser"] {
   display: none !important;
@@ -234,7 +243,8 @@ div[class*="block-container"] {
   z-index: 999 !important;
 }
 
-/* Add padding so last message isn't hidden behind fixed input */
+/* Add padding to bottom of chat so last message
+   not hidden behind fixed input bar */
 [data-testid="stChatMessageContainer"] {
   padding-bottom: 80px !important;
 }
@@ -244,7 +254,7 @@ div[class*="block-container"] {
 
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-# ── Constants ──────────────────────────────────────────────────────
+# ── SECTION C — Constants ──────────────────────────────────────────
 WELCOME_MESSAGE = (
     "👋 Hey! I'm **MigrateAI** — your intelligent "
     "data migration assistant.\n\n"
@@ -271,7 +281,7 @@ _MIGRATION_PAIRS = [
     (("mongo",),    ("s3",),        "Mongo",    "S3"),
 ]
 
-# ── Hero HTML ──────────────────────────────────────────────────────
+# ── SECTION D — Hero HTML ──────────────────────────────────────────
 HERO_HTML = """
 <div style="background:#1A1446;width:100%;
   padding:16px 28px 0;box-sizing:border-box;
@@ -431,15 +441,17 @@ HERO_HTML = """
 </div>
 """
 
-# ── Session state ──────────────────────────────────────────────────
+# ── SECTION E — Session state ──────────────────────────────────────
 if "agent" not in st.session_state:
     registry = build_default_registry(
-        migrate_pg_to_bq=migrate_postgres_to_bigquery,
-        migrate_csv_to_sqlite=migrate_csv_to_sqlite,
-        migrate_s3_to_sf=migrate_s3_to_snowflake,
-        migrate_mongo_to_s3=migrate_mongo_to_s3,
+        migrate_pg_to_bq      = migrate_postgres_to_bigquery,
+        migrate_csv_to_sqlite = migrate_csv_to_sqlite,
+        migrate_s3_to_sf      = migrate_s3_to_snowflake,
+        migrate_mongo_to_s3   = migrate_mongo_to_s3,
     )
-    st.session_state.agent = MigrationAgent(registry=registry)
+    st.session_state.agent = MigrationAgent(
+        registry=registry
+    )
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -450,7 +462,7 @@ if "last_migrations" not in st.session_state:
     st.session_state.last_migrations = []
 
 
-# ── Helpers ────────────────────────────────────────────────────────
+# ── SECTION F — Helper functions ───────────────────────────────────
 def detect_and_record(text: str) -> None:
     lower = text.lower()
     if not any(w in lower for w in _COMPLETION_WORDS):
@@ -461,16 +473,24 @@ def detect_and_record(text: str) -> None:
             entry = {
                 "label": f"{src_l} → {dst_l}",
                 "detail": "done",
-                "time": datetime.datetime.now().strftime("%H:%M"),
+                "time": datetime.datetime.now()
+                    .strftime("%H:%M"),
             }
-            st.session_state.last_migrations.insert(0, entry)
-            st.session_state.last_migrations = (
-                st.session_state.last_migrations[:3]
+            st.session_state.last_migrations.insert(
+                0, entry
             )
+            st.session_state.last_migrations = \
+                st.session_state.last_migrations[:3]
             return
 
 
 def send_message(prompt: str) -> None:
+    """
+    Core message handler used by both the chat input
+    and quick start buttons.
+    Appends user message, gets reply, appends reply,
+    detects migration completion, triggers rerun.
+    """
     st.session_state.messages.append(
         {"role": "user", "content": prompt}
     )
@@ -482,11 +502,13 @@ def send_message(prompt: str) -> None:
     detect_and_record(prompt)
 
 
-# ── Hero (renders above sidebar + chat) ───────────────────────────
+# ── SECTION G — Render hero ────────────────────────────────────────
+# Hero must render BEFORE sidebar and chat
+# so it appears above everything
 st.markdown(HERO_HTML, unsafe_allow_html=True)
 
 
-# ── Sidebar ────────────────────────────────────────────────────────
+# ── SECTION H — Sidebar ────────────────────────────────────────────
 def build_last_migration_html() -> str:
     entries = st.session_state.last_migrations
     if not entries:
@@ -536,6 +558,7 @@ def build_last_migration_html() -> str:
 
 with st.sidebar:
 
+    # Quick Start label
     st.markdown("""
     <div style="padding:14px 4px 6px;
       font-family:system-ui,-apple-system,sans-serif;">
@@ -548,83 +571,105 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
+    # Quick start buttons — each calls send_message() then st.rerun()
     if st.button(
         "🗄  Postgres → BigQuery",
         key="qs_pg_bq",
-        use_container_width=True,
+        use_container_width=True
     ):
-        send_message("I want to migrate data from Postgres to BigQuery")
+        send_message(
+            "I want to migrate data from "
+            "Postgres to BigQuery"
+        )
         st.rerun()
 
     if st.button(
         "📄  CSV → SQLite",
         key="qs_csv_sl",
-        use_container_width=True,
+        use_container_width=True
     ):
-        send_message("I need to load a CSV file into SQLite")
+        send_message(
+            "I need to load a CSV file into SQLite"
+        )
         st.rerun()
 
     if st.button(
         "☁️   S3 → Snowflake",
         key="qs_s3_sf",
-        use_container_width=True,
+        use_container_width=True
     ):
-        send_message("I want to migrate data from S3 to Snowflake")
+        send_message(
+            "I want to migrate data from "
+            "S3 to Snowflake"
+        )
         st.rerun()
 
     if st.button(
         "🍃  Mongo → S3",
         key="qs_mg_s3",
-        use_container_width=True,
+        use_container_width=True
     ):
-        send_message("I want to export a MongoDB collection to S3")
+        send_message(
+            "I want to export a MongoDB collection to S3"
+        )
         st.rerun()
 
+    # Divider
     st.markdown("""
     <hr style="border:none;
       border-top:0.5px solid rgba(255,255,255,0.1);
       margin:12px 0;">
     """, unsafe_allow_html=True)
 
+    # Last migration — rendered as HTML
     st.markdown(
         build_last_migration_html(),
-        unsafe_allow_html=True,
+        unsafe_allow_html=True
     )
 
+    # Spacer to push New Migration to bottom
     st.markdown(
         "<div style='flex:1;min-height:20px;'></div>",
-        unsafe_allow_html=True,
+        unsafe_allow_html=True
     )
 
+    # New Migration button — uses unique key so CSS can target it
     if st.button(
         "+ New Migration",
         key="reset_btn",
         use_container_width=True,
-        type="primary",
+        type="primary"
     ):
         st.session_state.agent.reset()
         st.session_state.messages = [
-            {"role": "assistant", "content": WELCOME_MESSAGE}
+            {"role": "assistant",
+             "content": WELCOME_MESSAGE}
         ]
         st.session_state.last_migrations = []
         st.rerun()
 
 
-# ── Chat messages ──────────────────────────────────────────────────
+# ── SECTION I — Chat messages ──────────────────────────────────────
+# Render all messages from session state
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
 
-# ── Chat input ─────────────────────────────────────────────────────
+# ── SECTION J — Chat input ─────────────────────────────────────────
+# st.chat_input() is automatically pinned to bottom
+# Returns string when submitted, None otherwise
 if prompt := st.chat_input("Type your reply…"):
     send_message(prompt)
     st.rerun()
 
 
-# ── New Migration button CSS override ─────────────────────────────
+# ── SECTION K — New Migration button CSS override ──────────────────
+# Added AFTER all components are rendered
+# so it targets the correct rendered button
 st.markdown("""
 <style>
+/* Target New Migration by its Streamlit key */
 div[data-testid="stSidebar"]
   button[kind="primary"] {
   background: #FFD000 !important;
