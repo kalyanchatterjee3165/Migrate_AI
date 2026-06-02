@@ -15,7 +15,8 @@ No real databases or cloud services are connected.
 ## Stack
 
 - **LLM**: OpenAI GPT-4o via `openai` SDK (tool/function calling)
-- **UI**: Gradio chat interface (`app.py`)
+- **UI**: Gradio chat interface (`app.py`) — `main` branch
+- **UI (streamlit branch)**: Streamlit — `st.chat_message`, `st.session_state`, `st.sidebar`
 - **Data generation**: `faker`, `pandas`
 - **Database**: `sqlalchemy` (SQLite destination)
 - **Python**: 3.10+
@@ -26,7 +27,10 @@ No real databases or cloud services are connected.
 
 ```
 migrate-ai/
-├── app.py                        # Gradio entry point — run this
+├── app.py                        # Gradio entry point — run this (main branch)
+├── streamlit_app.py              # Streamlit UI (streamlit branch only)
+├── .streamlit/
+│   └── config.toml               # Streamlit theme + server config
 ├── CLAUDE.md                     # You are here
 │
 ├── llm/
@@ -89,8 +93,11 @@ python app.py
 ## Common Commands
 
 ```bash
-# Run the app
+# Run the app (main branch — Gradio)
 python app.py
+
+# Run the app (streamlit branch — Streamlit)
+streamlit run streamlit_app.py
 
 # Install deps
 pip install -r requirements.txt
