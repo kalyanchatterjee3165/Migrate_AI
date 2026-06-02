@@ -10,19 +10,40 @@ import config.settings as settings
 
 CUSTOM_CSS = """
 
-/* === GLOBAL RESET — minimal === */
-body, html {
+/* === GLOBAL RESET — true fullscreen === */
+html, body {
   margin: 0 !important;
   padding: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
   overflow: hidden !important;
+  background: #F4F4F4 !important;
 }
 
-/* === GRADIO CONTAINER === */
+/* Gradio web-component wrapper */
+gradio-app {
+  width: 100vw !important;
+  min-width: 100vw !important;
+  display: block !important;
+  background: #F4F4F4 !important;
+}
+
+/* === GRADIO CONTAINER — remove all centering === */
 .gradio-container {
-  max-width: 100% !important;
+  max-width: 100vw !important;
+  width: 100vw !important;
+  min-width: 100vw !important;
   padding: 0 !important;
   margin: 0 !important;
   background: #F4F4F4 !important;
+}
+
+/* Remove inner max-width / centering Gradio adds */
+.main, .contain, .gap {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 /* === REMOVE GRADIO FOOTER === */
@@ -157,36 +178,30 @@ FULLSCREEN_JS = """
 <script>
 (function() {
   function makeFullscreen() {
-    var styles = [
-      'width:100vw;max-width:100vw;',
-      'height:100vh;min-height:100vh;',
-      'margin:0;padding:0;overflow:hidden;'
-    ].join('');
-
     var selectors = [
-      '.gradio-container',
-      'gradio-app',
-      'gradio-app > div',
-      '#root',
-      'body'
+      'html', 'body', 'gradio-app',
+      'gradio-app > div', '.gradio-container',
+      '.main', '.contain', '#root'
     ];
-
     selectors.forEach(function(sel) {
-      var els = document.querySelectorAll(sel);
-      els.forEach(function(el) {
-        el.style.cssText += styles;
+      document.querySelectorAll(sel).forEach(function(el) {
+        el.style.setProperty('width',      '100vw',   'important');
+        el.style.setProperty('max-width',  '100vw',   'important');
+        el.style.setProperty('min-width',  '0',       'important');
+        el.style.setProperty('margin',     '0',       'important');
+        el.style.setProperty('padding',    '0',       'important');
+        el.style.setProperty('box-sizing', 'border-box', 'important');
       });
     });
-
-    var footers = document.querySelectorAll('footer, .footer');
-    footers.forEach(function(f) { f.style.display = 'none'; });
+    document.querySelectorAll('footer, .footer, [class*="footer"]')
+      .forEach(function(f) { f.style.setProperty('display', 'none', 'important'); });
   }
 
   makeFullscreen();
   document.addEventListener('DOMContentLoaded', makeFullscreen);
-  setTimeout(makeFullscreen, 500);
-  setTimeout(makeFullscreen, 1000);
-  setTimeout(makeFullscreen, 2000);
+  setTimeout(makeFullscreen, 300);
+  setTimeout(makeFullscreen, 800);
+  setTimeout(makeFullscreen, 1500);
   window.addEventListener('resize', makeFullscreen);
 })();
 </script>
