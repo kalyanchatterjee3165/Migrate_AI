@@ -14,11 +14,12 @@ No real databases or cloud services are connected.
 
 ## Branches
 
-| Branch          | Frontend         | Run command                               |
-|-----------------|------------------|-------------------------------------------|
-| `fastapi-react` | React + FastAPI  | see **How to Run** below ← active branch  |
-| `main`          | Gradio           | `python app.py`                           |
-| `streamlit`     | Streamlit        | `streamlit run streamlit_app.py`          |
+| Branch           | Frontend         | Run command                               |
+|------------------|------------------|-------------------------------------------|
+| `fastapi-react`  | React + FastAPI  | see **How to Run** below ← active branch  |
+| `main`           | Gradio           | `python app.py`                           |
+| `streamlit`      | Streamlit        | `streamlit run streamlit_app.py`          |
+| `streamlit-v2`   | Streamlit (new)  | `streamlit run streamlit_app.py`          |
 
 Backend logic (LLM agent, tools, migrations) is identical across all branches.
 
@@ -29,6 +30,7 @@ Backend logic (LLM agent, tools, migrations) is identical across all branches.
 - **LLM**: Any OpenAI-compatible API — configured via `.env` (OpenAI, Gemini, Groq, Ollama…)
 - **Backend**: FastAPI + Uvicorn (`backend/main.py`)
 - **Frontend**: React 18 + Vite, plain CSS with token variables (no Tailwind, no CSS-in-JS)
+- **Streamlit**: `streamlit_app.py` — `streamlit-v2` branch
 - **Markdown rendering**: `react-markdown` (chat bubbles)
 - **Icons**: `lucide-react`
 - **Data generation**: `faker`, `pandas`
@@ -44,6 +46,8 @@ migrate-ai/
 ├── .env.example                  # copy to .env and fill in values
 ├── docker-compose.yml            # runs backend + frontend together
 ├── CLAUDE.md                     # You are here
+├── streamlit_app.py              # NEW (streamlit-v2 branch)
+├── .streamlit/config.toml        # NEW theme + server config
 │
 ├── backend/                      # FastAPI server
 │   ├── main.py                   # FastAPI app entry point — run this
@@ -153,6 +157,10 @@ cd backend && flake8 . --max-line-length=100
 
 # Python tests (once added)
 cd backend && pytest tests/
+
+# streamlit-v2 branch
+streamlit run streamlit_app.py
+# opens at http://localhost:8501
 ```
 
 ---
