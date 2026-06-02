@@ -12,16 +12,28 @@ No real databases or cloud services are connected.
 
 ---
 
+## Branches
+
+| Branch          | Frontend         | Run command                               |
+|-----------------|------------------|-------------------------------------------|
+| `fastapi-react` | React + FastAPI  | see **How to Run** below ← active branch  |
+| `main`          | Gradio           | `python app.py`                           |
+| `streamlit`     | Streamlit        | `streamlit run streamlit_app.py`          |
+
+Backend logic (LLM agent, tools, migrations) is identical across all branches.
+
+---
+
 ## Stack
 
-- **LLM**: OpenAI GPT-4o via `openai` SDK (tool/function calling)
+- **LLM**: Any OpenAI-compatible API — configured via `.env` (OpenAI, Gemini, Groq, Ollama…)
 - **Backend**: FastAPI + Uvicorn (`backend/main.py`)
-- **Frontend**: React 18 + Vite, plain CSS (no Tailwind, no CSS-in-JS)
-- **UI icons**: lucide-react
+- **Frontend**: React 18 + Vite, plain CSS with token variables (no Tailwind, no CSS-in-JS)
+- **Markdown rendering**: `react-markdown` (chat bubbles)
+- **Icons**: `lucide-react`
 - **Data generation**: `faker`, `pandas`
 - **Database**: `sqlalchemy` (SQLite destination)
-- **Python**: 3.10+
-- **Node**: 20+
+- **Python**: 3.11+  |  **Node**: 18+
 
 ---
 
@@ -29,38 +41,39 @@ No real databases or cloud services are connected.
 
 ```
 migrate-ai/
-├── app.py                        # Legacy Gradio entry point (deprecated)
+├── .env.example                  # copy to .env and fill in values
+├── docker-compose.yml            # runs backend + frontend together
 ├── CLAUDE.md                     # You are here
-├── docker-compose.yml            # Runs backend + frontend together
 │
 ├── backend/                      # FastAPI server
-│   ├── main.py                   # FastAPI app — run this
-│   ├── requirements.txt          # Python deps (FastAPI, uvicorn, openai, …)
+│   ├── main.py                   # FastAPI app entry point — run this
+│   ├── requirements.txt
 │   ├── Dockerfile
-│   ├── schemas/
-│   │   └── chat.py               # Pydantic models: ChatRequest, ChatResponse, …
+│   │
+│   ├── config/
+│   │   └── settings.py           # loads .env — LLM_*, OUTPUT_DIR, LOG_LEVEL
+│   │
 │   ├── routers/
 │   │   ├── chat.py               # POST /api/chat
-│   │   └── session.py            # POST /api/reset, GET /api/status, GET /api/output
+│   │   └── session.py            # POST /api/reset · GET /api/status · GET /api/output
+│   │
+│   ├── schemas/
+│   │   └── chat.py               # Pydantic models: ChatRequest, ChatResponse, …
 │   │
 │   ├── llm/
-│   │   ├── agent.py              # MigrationAgent: chat loop + tool dispatch
-│   │   ├── prompts.py            # SYSTEM_PROMPT + confirmation helper
-│   │   └── tool_registry.py      # ToolRegistry + OpenAI tool schemas
+│   │   ├── agent.py              # MigrationAgent — chat loop + tool dispatch
+│   │   ├── prompts.py            # SYSTEM_PROMPT
+│   │   └── tool_registry.py      # ToolRegistry + OpenAI-format tool schemas
 │   │
 │   ├── tools/
 │   │   ├── base.py               # BaseTool interface
-│   │   ├── generators/           # Faker-based data generation
-│   │   ├── sources/              # Fake Postgres, CSV, S3, Mongo sources
-│   │   └── destinations/         # Fake BigQuery, SQLite, S3, Snowflake dests
+│   │   ├── generators/           # Faker-based DataFrame generation
+│   │   ├── sources/              # Fake Postgres, CSV, S3, MongoDB reads
+│   │   └── destinations/         # Fake BigQuery, SQLite, S3, Snowflake writes
 │   │
 │   ├── migrations/
 │   │   ├── executor.py           # Wires source.read() → dest.write()
-│   │   └── validator.py          # Fake pre/post validation
-│   │
-│   ├── config/
-│   │   ├── connectors.yaml       # Supported source/dest pairs + required fields
-│   │   └── settings.py           # Loads .env vars
+│   │   └── validator.py          # Fake pre/post row count + schema checks
 │   │
 │   ├── session/
 │   │   └── state.py              # Per-conversation config state
@@ -69,53 +82,50 @@ migrate-ai/
 │
 └── frontend/                     # React + Vite UI
     ├── package.json
-    ├── vite.config.js            # Proxies /api → localhost:8000
-    ├── index.html
+    ├── vite.config.js            # proxies /api → localhost:8000
     └── src/
-        ├── main.jsx
         ├── App.jsx               # Root — assembles Hero + Sidebar + Chat
         ├── api/
         │   └── chat.js           # fetch wrappers: sendMessage, resetSession, …
         ├── hooks/
-        │   └── useChat.js        # All chat state + sendMessage + resetSession
+        │   └── useChat.js        # all chat state + send + reset logic
         ├── styles/
-        │   ├── tokens.css        # Liberty Mutual CSS variables
+        │   ├── tokens.css        # CSS custom properties (brand colours, spacing)
         │   └── global.css        # CSS reset + base styles
         └── components/
-            ├── Hero.jsx          # Full-width header with logo, tabs, pills
-            ├── Sidebar.jsx       # Quick start panel + New Migration button
+            ├── Hero.jsx          # Full-width header — logo, wordmark, pills, tabs
+            ├── Sidebar.jsx       # Quick start buttons + Last Migration section
             ├── ChatArea.jsx      # Scrollable message list
-            ├── Message.jsx       # Single AI / user bubble
-            ├── ConfigCard.jsx    # Yellow-bordered collected-config card
-            ├── TypingIndicator.jsx # Three bouncing dots
-            └── InputBar.jsx      # Text input + send button
+            ├── Message.jsx       # Single AI / user bubble — renders markdown
+            ├── ConfigCard.jsx    # Migration config summary card
+            ├── TypingIndicator.jsx
+            └── InputBar.jsx      # Textarea + send button
 ```
 
 ---
 
 ## How to Run
 
-### Local development (recommended)
+### Option A — Docker (both services in one command)
 
 ```bash
-# Backend
+docker compose up --build
+# Frontend → http://localhost:3000
+# Backend  → http://localhost:8000
+```
+
+### Option B — Local dev (two terminals)
+
+```bash
+# Terminal 1 — Backend
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 
-# Frontend (separate terminal) — requires Node 20
+# Terminal 2 — Frontend
 cd frontend
 npm install
-npm run dev
-# Vite opens at http://localhost:5173
-```
-
-### Both via Docker
-
-```bash
-docker-compose up --build
-# Backend → http://localhost:8000
-# Frontend → http://localhost:3000
+npm run dev          # http://localhost:5173
 ```
 
 ---
@@ -123,7 +133,7 @@ docker-compose up --build
 ## Common Commands
 
 ```bash
-# Backend — start with hot reload
+# Backend — hot reload
 cd backend && uvicorn main:app --reload --port 8000
 
 # Frontend — Vite dev server
@@ -133,50 +143,93 @@ cd frontend && npm run dev
 cd frontend && npm run build
 
 # Both via Docker
-docker-compose up --build
+docker compose up --build
 
-# Check output files after a simulated migration
+# Check simulated output files
 ls backend/output/
 
-# Lint Python
+# Python lint
 cd backend && flake8 . --max-line-length=100
 
-# Run Python tests (once added)
+# Python tests (once added)
 cd backend && pytest tests/
+```
+
+---
+
+## LLM Configuration
+
+All three variables live in the root `.env` file.
+Changing them requires only a server restart — no code changes.
+
+| Variable            | Required | Default  | Purpose                                         |
+|---------------------|----------|----------|-------------------------------------------------|
+| `LLM_API_KEY`       | Yes      | —        | API key (`OPENAI_API_KEY` accepted as fallback) |
+| `LLM_BASE_URL`      | No       | —        | OpenAI-compatible endpoint; blank = OpenAI      |
+| `LLM_MODEL`         | No       | `gpt-4o` | Model name supported by the chosen provider     |
+| `LLM_EXTRA_HEADERS` | No       | —        | JSON object — sent as headers on every LLM call |
+
+**Where these are used:**
+- `backend/config/settings.py` — parsed from env
+- `backend/llm/agent.py` — `MigrationAgent.__init__` builds the `OpenAI` client with `api_key`, `base_url`, and `default_headers`
+
+**Provider examples:**
+
+```env
+# OpenAI (default)
+LLM_API_KEY=sk-...
+
+# Google Gemini
+LLM_API_KEY=<google-ai-studio-key>
+LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+LLM_MODEL=gemini-2.0-flash
+
+# Groq
+LLM_API_KEY=<groq-key>
+LLM_BASE_URL=https://api.groq.com/openai/v1
+LLM_MODEL=llama-3.3-70b-versatile
+
+# Extra headers
+LLM_EXTRA_HEADERS={"use-case": "data-migration", "x-team": "platform"}
 ```
 
 ---
 
 ## API Endpoints
 
-| Method | Path         | Description                        |
-|--------|--------------|------------------------------------|
-| POST   | /api/chat    | Send a message, get a reply        |
-| POST   | /api/reset   | Reset the conversation             |
-| GET    | /api/status  | Returns `{ model, connected }`     |
-| GET    | /api/output  | List files in backend/output/      |
+| Method | Path          | Description                              |
+|--------|---------------|------------------------------------------|
+| POST   | `/api/chat`   | Send a message, receive agent reply      |
+| POST   | `/api/reset`  | Clear conversation + agent history       |
+| GET    | `/api/status` | Health check — returns model + connected |
+| GET    | `/api/output` | List files in `backend/output/`          |
+
+Interactive docs: **http://localhost:8000/docs**
 
 ---
 
 ## Key Design Decisions
 
-**Fake-at-the-source-layer**: All sources return Faker-generated DataFrames.
-Destinations save to `backend/output/` as CSV/JSON. The agent, tool registry,
-and migration executor are all real and production-ready — only the I/O is mocked.
+**Fake-at-the-source-layer**: All sources return Faker DataFrames.
+Destinations write to `backend/output/`. Agent, registry, executor are
+production-ready; only I/O is mocked.
 
-**OpenAI function calling**: The agent uses `tool_choice="auto"`. The LLM
-decides when it has enough config to call a tool — no hardcoded state machine.
+**Function calling over state machine**: The agent uses `tool_choice="auto"`.
+The LLM decides when it has collected enough config — no hardcoded flow.
 
-**Single registry pattern**: `tool_registry.py` is the only place to add new
+**Single registry pattern**: `tool_registry.py` is the only place to add
 migration paths. Add a schema method + call `registry.register()` in
 `build_default_registry()`.
 
-**Stateful chat history**: `MigrationAgent.history` holds the full OpenAI
-message list. `agent.reset()` clears it. The React `useChat` hook calls
-`POST /api/reset` on the "New Migration" button.
+**Stateful per-session agent**: `MigrationAgent.history` holds the full
+message list. `agent.reset()` clears it. `POST /api/reset` triggers this
+from the frontend.
 
-**Plain CSS with tokens**: No Tailwind, no CSS-in-JS. All colour values live
-in `frontend/src/styles/tokens.css` as CSS custom properties.
+**Plain CSS + tokens**: All colour/spacing values live in `tokens.css` as
+CSS custom properties. No Tailwind, no CSS-in-JS.
+
+**Markdown in chat**: `Message.jsx` uses `react-markdown` with custom
+component overrides so that bubble text colour is always inherited correctly.
 
 ---
 
@@ -185,43 +238,31 @@ in `frontend/src/styles/tokens.css` as CSS custom properties.
 1. Add a source reader in `backend/tools/sources/` extending `BaseSource`
 2. Add a destination writer in `backend/tools/destinations/` extending `BaseDestination`
 3. Add a handler function in `backend/migrations/executor.py`
-4. Add the JSON schema in `backend/llm/tool_registry.py` as a static method
+4. Add the JSON schema as a static method in `backend/llm/tool_registry.py`
 5. Register it in `build_default_registry()`
-6. Update `backend/config/connectors.yaml`
-7. Update the `SYSTEM_PROMPT` in `backend/llm/prompts.py` with the new fields
+6. Update `backend/connectors.yaml`
+7. Update `SYSTEM_PROMPT` in `backend/llm/prompts.py`
 
 ---
 
-## Supported Migration Paths (POC)
+## Supported Migration Paths
 
-| Source    | Destination | Tool name                      |
-|-----------|-------------|-------------------------------|
-| Postgres  | BigQuery    | `migrate_postgres_to_bigquery` |
-| CSV       | SQLite      | `migrate_csv_to_sqlite`        |
-| S3        | Snowflake   | `migrate_s3_to_snowflake`      |
-| MongoDB   | S3          | `migrate_mongo_to_s3`          |
-
----
-
-## Environment Variables
-
-| Variable         | Required | Description              |
-|------------------|----------|--------------------------|
-| `OPENAI_API_KEY` | Yes      | OpenAI API key           |
-| `LOG_LEVEL`      | No       | Default: INFO            |
-| `OUTPUT_DIR`     | No       | Default: `./output`      |
-
-The `.env` file lives at the project root. The backend loads it automatically
-via `find_dotenv()` (searches parent directories from `backend/`).
+| Source   | Destination | Tool name                      |
+|----------|-------------|-------------------------------|
+| Postgres | BigQuery    | `migrate_postgres_to_bigquery` |
+| CSV      | SQLite      | `migrate_csv_to_sqlite`        |
+| S3       | Snowflake   | `migrate_s3_to_snowflake`      |
+| MongoDB  | S3          | `migrate_mongo_to_s3`          |
 
 ---
 
 ## What NOT to Do
 
 - Do not add real DB connection logic — keep sources/destinations fake for POC
-- Do not store credentials anywhere except `.env` (which is gitignored)
-- Do not put business logic in `main.py` — it's only app wiring
+- Do not store credentials anywhere except `.env` (gitignored)
+- Do not put business logic in `main.py` — it is only app wiring
 - Do not break the `BaseTool` / `BaseSource` / `BaseDestination` interfaces
-- Do not use Tailwind or CSS-in-JS in the frontend — plain CSS + token variables only
-- Do not use Redux — useState + custom hooks only
+- Do not use Tailwind or CSS-in-JS — plain CSS + `tokens.css` variables only
+- Do not use Redux or Zustand — `useState` + custom hooks only
 - Keep `App.jsx` under 80 lines — all logic in hooks, all UI in components
+- Do not hardcode the LLM model or API key — always read from `settings.py`

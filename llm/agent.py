@@ -1,11 +1,9 @@
 import json
 from openai import OpenAI
 
+import config.settings as settings
 from .prompts import SYSTEM_PROMPT
 from .tool_registry import ToolRegistry
-
-
-MODEL = "gpt-4o"
 
 
 class MigrationAgent:
@@ -20,7 +18,11 @@ class MigrationAgent:
 
     def __init__(self, registry: ToolRegistry):
         self.registry = registry
-        self.client = OpenAI()          # reads OPENAI_API_KEY from env
+        self.model = settings.LLM_MODEL
+        client_kwargs = {"api_key": settings.LLM_API_KEY}
+        if settings.LLM_BASE_URL:
+            client_kwargs["base_url"] = settings.LLM_BASE_URL
+        self.client = OpenAI(**client_kwargs)
         self.history: list[dict] = []   # full conversation history
 
     # ------------------------------------------------------------------
@@ -58,7 +60,7 @@ class MigrationAgent:
         messages = self._build_messages()
 
         response = self.client.chat.completions.create(
-            model=MODEL,
+            model=self.model,
             tools=tools,
             tool_choice="auto",
             messages=messages,
@@ -108,7 +110,7 @@ class MigrationAgent:
 
         # 3. Call LLM again so it can summarize the results in plain English
         final_response = self.client.chat.completions.create(
-            model=MODEL,
+            model=self.model,
             tools=tools,
             tool_choice="auto",
             messages=self._build_messages(),

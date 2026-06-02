@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown'
 import ConfigCard from './ConfigCard'
 
 const AvatarAI = () => (
@@ -38,9 +39,26 @@ export default function Message({ message }) {
           border: isAI ? '1px solid var(--lm-border)' : 'none',
           borderRadius: isAI ? '2px 12px 12px 12px' : '12px 2px 12px 12px',
           padding: '10px 14px', fontSize: 14, lineHeight: 1.55,
-          whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          wordBreak: 'break-word',
         }}>
-          {message.text}
+          <ReactMarkdown
+            components={{
+              p:      ({ children }) => <p style={{ margin: '0 0 6px' }}>{children}</p>,
+              ul:     ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: 18 }}>{children}</ul>,
+              ol:     ({ children }) => <ol style={{ margin: '4px 0', paddingLeft: 18 }}>{children}</ol>,
+              li:     ({ children }) => <li style={{ marginBottom: 2 }}>{children}</li>,
+              strong: ({ children }) => <strong style={{ fontWeight: 700, color: 'inherit' }}>{children}</strong>,
+              em:     ({ children }) => <em style={{ color: 'inherit' }}>{children}</em>,
+              code:   ({ children }) => (
+                <code style={{
+                  background: isAI ? 'rgba(26,20,70,0.07)' : 'rgba(255,255,255,0.15)',
+                  borderRadius: 4, padding: '1px 5px', fontSize: 13, fontFamily: 'monospace',
+                }}>{children}</code>
+              ),
+            }}
+          >
+            {message.text}
+          </ReactMarkdown>
         </div>
         {message.configCard && (
           <ConfigCard title={message.configCard.title} rows={message.configCard.rows} />
