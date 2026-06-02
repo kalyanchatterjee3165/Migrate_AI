@@ -1,374 +1,353 @@
+import datetime
 import gradio as gr
 
 # Load settings first (validates OPENAI_API_KEY)
 import config.settings as settings
 
 # ------------------------------------------------------------------
-# Liberty Mutual brand CSS
+# CSS — minimal, cosmetic only, no structural overrides
 # ------------------------------------------------------------------
 
-LM_CSS = """
-:root {
-    --lm-blue:       #1A1446;
-    --lm-yellow:     #FFD000;
-    --lm-dark-navy:  #002663;
-    --lm-white:      #FFFFFF;
-    --lm-light-gray: #F4F4F4;
-    --lm-text-dark:  #1A1446;
-    --lm-text-light: #FFFFFF;
+CUSTOM_CSS = """
+
+/* === GLOBAL RESET — minimal === */
+body, html {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
-/* ── Page shell ───────────────────────────────────────────────── */
-body, .gradio-container {
-    background-color: var(--lm-light-gray) !important;
-}
+/* === GRADIO CONTAINER === */
 .gradio-container {
-    max-width: 880px !important;
-    margin: 0 auto !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #F4F4F4 !important;
 }
 
-/* ── Header banner ────────────────────────────────────────────── */
-#lm-header {
-    background-color: var(--lm-blue);
-    padding: 24px 28px 20px;
-    border-radius: 8px;
-    margin-bottom: 4px;
-}
-#lm-header h1 {
-    color: var(--lm-white);
-    margin: 0 0 6px;
-    font-size: 1.6rem;
-}
-#lm-header p {
-    color: var(--lm-white);
-    margin: 0 0 4px;
-    opacity: 0.92;
-}
-#lm-header code {
-    background-color: rgba(255, 255, 255, 0.12);
-    color: var(--lm-yellow);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 0.88em;
+/* === REMOVE GRADIO FOOTER === */
+footer { display: none !important; }
+
+/* === CHATBOT BACKGROUND === */
+.chatbot, .chatbot > * {
+  background: #F4F4F4 !important;
 }
 
-/* ── Chatbot container ────────────────────────────────────────── */
-.chatbot,
-.chatbot > div,
-.chatbot .wrap,
-.chatbot .scroll-hide {
-    background-color: var(--lm-white) !important;
-    border: 1px solid rgba(26, 20, 70, 0.15) !important;
-    border-radius: 8px !important;
+/* === AI MESSAGE BUBBLE === */
+.message.bot {
+  background: #FFFFFF !important;
+  color: #1A1446 !important;
+  border: 0.5px solid rgba(26,20,70,0.15) !important;
+  border-radius: 2px 12px 12px 12px !important;
+  font-size: 13px !important;
+}
+.message.bot * { color: #1A1446 !important; }
+
+/* === USER MESSAGE BUBBLE === */
+.message.user,
+[data-testid="user"],
+.user {
+  background: #1A1446 !important;
+  color: #FFFFFF !important;
+  border-radius: 12px 2px 12px 12px !important;
+  font-size: 13px !important;
+}
+.message.user *,
+.message.user p,
+.message.user span,
+.message.user div,
+[data-testid="user"] *,
+[data-testid="user"] p,
+[data-testid="user"] span,
+[data-testid="user"] .prose,
+[data-testid="user"] .prose * {
+  color: #FFFFFF !important;
+  background: transparent !important;
 }
 
-/* ── Bubble backgrounds ───────────────────────────────────────── */
-.message.bot  .bubble-wrap { background-color: var(--lm-blue)   !important; }
-.message.user .bubble-wrap { background-color: var(--lm-yellow) !important; }
-
-/* ── Bubble text — JS luminance overrides these at runtime ───── */
-.message.bot  .bubble-wrap,
-.message.bot  .bubble-wrap * { color: var(--lm-white) !important; }
-.message.user .bubble-wrap,
-.message.user .bubble-wrap * { color: var(--lm-blue)  !important; }
-
-/* ── Minimum width so short messages aren't a sliver ─────────── */
-.message .bubble-wrap {
-    min-width: 80px !important;
-    width: fit-content !important;
-    max-width: 80% !important;
-    box-sizing: border-box !important;
-}
-.message.user { justify-content: flex-end !important; }
-.message.bot  { justify-content: flex-start !important; }
-
-/* ── Primary button (Send) ────────────────────────────────────── */
-button.primary {
-    background-color: var(--lm-yellow) !important;
-    color: var(--lm-blue) !important;
-    border: none !important;
-    font-weight: 700 !important;
-}
-button.primary:hover {
-    background-color: #E6BB00 !important;
-    color: var(--lm-blue) !important;
+/* === HIDE GRADIO ACTION BUTTONS === */
+.copy-btn, .share-btn, .like-btn,
+.dislike-btn, .retry-btn, .delete-btn,
+[data-testid="copy-btn"],
+.message-buttons,
+div[class*="message-buttons"] {
+  display: none !important;
 }
 
-/* ── Secondary button (New Migration) ────────────────────────── */
-button.secondary {
-    background-color: transparent !important;
-    color: var(--lm-blue) !important;
-    border: 2px solid var(--lm-blue) !important;
-    font-weight: 600 !important;
-}
-button.secondary:hover {
-    background-color: var(--lm-blue) !important;
-    color: var(--lm-white) !important;
+/* === INPUT TEXTBOX === */
+#msg-input textarea {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(26,20,70,0.2) !important;
+  border-radius: 10px !important;
+  color: #1A1446 !important;
+  font-size: 13px !important;
+  padding: 10px 14px !important;
 }
 
-/* ── Text input ───────────────────────────────────────────────── */
-input[type=text], textarea {
-    background-color: var(--lm-white) !important;
-    border: 1px solid rgba(26, 20, 70, 0.3) !important;
-    color: var(--lm-text-dark) !important;
-    border-radius: 6px !important;
+/* === SEND BUTTON === */
+#send-btn button {
+  background: #FFD000 !important;
+  color: #1A1446 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
 }
-input[type=text]:focus, textarea:focus {
-    border-color: var(--lm-blue) !important;
-    box-shadow: 0 0 0 3px rgba(26, 20, 70, 0.14) !important;
-    outline: none !important;
+#send-btn button:hover { background: #E6BB00 !important; }
+#send-btn button span { color: #1A1446 !important; }
+
+/* === SIDEBAR BUTTONS === */
+#qs-btn-1 button, #qs-btn-2 button,
+#qs-btn-3 button, #qs-btn-4 button {
+  background: transparent !important;
+  color: rgba(255,255,255,0.75) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  text-align: left !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+  padding: 8px 12px !important;
+  width: 100% !important;
+}
+#qs-btn-1 button span, #qs-btn-2 button span,
+#qs-btn-3 button span, #qs-btn-4 button span {
+  color: rgba(255,255,255,0.75) !important;
+}
+#qs-btn-1 button:hover, #qs-btn-2 button:hover,
+#qs-btn-3 button:hover, #qs-btn-4 button:hover {
+  background: rgba(255,255,255,0.1) !important;
+  color: #FFFFFF !important;
+}
+#qs-btn-1 button {
+  background: rgba(255,208,0,0.15) !important;
+  color: #FFFFFF !important;
+  border-left: 3px solid #FFD000 !important;
+}
+#qs-btn-1 button span { color: #FFFFFF !important; }
+
+/* === NEW MIGRATION BUTTON === */
+#new-migration-btn button {
+  background: #FFD000 !important;
+  color: #1A1446 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  width: 100% !important;
+  box-shadow: none !important;
+}
+#new-migration-btn button span { color: #1A1446 !important; }
+#new-migration-btn button:hover { background: #E6BB00 !important; }
+
+/* === SIDEBAR COLUMN BACKGROUND === */
+#sidebar-col {
+  background: #002663 !important;
+  border-radius: 0 !important;
+}
+#sidebar-col > * {
+  background: #002663 !important;
 }
 
-/* ── Examples / Quick starts (Gradio 6 uses .dataset) ────────── */
-.dataset {
-    background-color: var(--lm-white) !important;
-    border: 1px solid rgba(26, 20, 70, 0.12) !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-}
-.dataset table {
-    background-color: var(--lm-white) !important;
-    width: 100% !important;
-}
-.dataset tbody tr {
-    background-color: var(--lm-light-gray) !important;
-    cursor: pointer !important;
-    transition: background-color 0.15s ease, color 0.15s ease !important;
-}
-.dataset tbody tr:hover {
-    background-color: var(--lm-blue) !important;
-}
-.dataset tbody tr td,
-.dataset tbody tr td * {
-    color: var(--lm-blue) !important;
-    font-size: 0.9rem !important;
-    padding: 10px 14px !important;
-}
-.dataset tbody tr:hover td,
-.dataset tbody tr:hover td * {
-    color: var(--lm-yellow) !important;
-}
-
-/* ════════════════════════════════════════════════════════════════
-   LOGIN / AUTH PAGE — Liberty Mutual brand palette
-   ════════════════════════════════════════════════════════════════ */
-
-/* ── Page background ──────────────────────────────────────────── */
-body:has(.login) {
-    background-color: var(--lm-light-gray) !important;
-    min-height: 100vh !important;
-}
-
-/* ── Card ─────────────────────────────────────────────────────── */
-.login {
-    background-color: var(--lm-white) !important;
-    border-radius: 12px !important;
-    border: none !important;
-    box-shadow: 0 2px 8px rgba(26, 20, 70, 0.08),
-                0 8px 32px rgba(26, 20, 70, 0.12) !important;
-    overflow: hidden !important;  /* lets the header strip sit flush */
-}
-
-/* ── Blue header strip at top of card ────────────────────────── */
-.login::before {
-    content: "migrate.ai" !important;
-    display: block !important;
-    background-color: var(--lm-blue) !important;
-    color: var(--lm-white) !important;
-    font-size: 1.1rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.02em !important;
-    padding: 14px 28px !important;
-}
-
-/* ── Title ────────────────────────────────────────────────────── */
-.login h1 {
-    color: var(--lm-blue) !important;
-    font-size: 1.35rem !important;
-    font-weight: 700 !important;
-    margin: 0 0 4px !important;
-}
-
-/* ── Auth message (subtitle) ──────────────────────────────────── */
-.login .auth-message {
-    color: #444 !important;
-    font-size: 0.9rem !important;
-    margin-bottom: 22px !important;
-}
-
-/* ── Labels ───────────────────────────────────────────────────── */
-.login label,
-.login label span {
-    color: var(--lm-text-dark) !important;
-    font-size: 0.88rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.01em !important;
-}
-
-/* ── Placeholders ─────────────────────────────────────────────── */
-.login input::placeholder {
-    color: rgba(26, 20, 70, 0.35) !important;
-}
-
-/* ── Input fields ─────────────────────────────────────────────── */
-.login input[type=text],
-.login input[type=password] {
-    background-color: var(--lm-white) !important;
-    border: 1.5px solid rgba(26, 20, 70, 0.25) !important;
-    border-radius: 6px !important;
-    color: var(--lm-text-dark) !important;
-    padding: 10px 14px !important;
-    width: 100% !important;
-    font-size: 0.95rem !important;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
-}
-.login input[type=text]:focus,
-.login input[type=password]:focus {
-    border-color: var(--lm-blue) !important;
-    box-shadow: 0 0 0 3px rgba(26, 20, 70, 0.13) !important;
-    outline: none !important;
-}
-.login input[type=text]:hover,
-.login input[type=password]:hover {
-    border-color: rgba(26, 20, 70, 0.5) !important;
-}
-
-/* ── Primary login button ─────────────────────────────────────── */
-.login button[type=submit],
-.login button.primary {
-    background-color: var(--lm-yellow) !important;
-    color: var(--lm-blue) !important;
-    border: none !important;
-    border-radius: 6px !important;
-    font-size: 0.95rem !important;
-    font-weight: 700 !important;
-    width: 100% !important;
-    padding: 11px 20px !important;
-    margin-top: 18px !important;
-    cursor: pointer !important;
-    letter-spacing: 0.02em !important;
-    transition: background-color 0.15s ease !important;
-}
-.login button[type=submit]:hover,
-.login button.primary:hover {
-    background-color: #E6BB00 !important;
-}
-.login button[type=submit]:active,
-.login button.primary:active {
-    background-color: #D4AC00 !important;
-}
-
-/* ── Secondary / outline buttons ─────────────────────────────── */
-.login button.secondary {
-    background-color: transparent !important;
-    color: var(--lm-blue) !important;
-    border: 1.5px solid var(--lm-blue) !important;
-    border-radius: 6px !important;
-    font-weight: 600 !important;
-    padding: 10px 20px !important;
-    cursor: pointer !important;
-    transition: background-color 0.15s ease, color 0.15s ease !important;
-}
-.login button.secondary:hover {
-    background-color: var(--lm-blue) !important;
-    color: var(--lm-white) !important;
-}
-
-/* ── Links (Forgot password / Sign up) ───────────────────────── */
-.login a {
-    color: var(--lm-blue) !important;
-    text-decoration: underline !important;
-    font-weight: 500 !important;
-}
-.login a:hover {
-    color: var(--lm-dark-navy) !important;
-    text-decoration-thickness: 2px !important;
-}
-
-/* ── Icons on light background ────────────────────────────────── */
-.login svg,
-.login .icon {
-    color: var(--lm-blue) !important;
-    fill: var(--lm-blue) !important;
-}
-
-/* ── Error messages ───────────────────────────────────────────── */
-.login .error,
-.login [class*="error"] {
-    color: #C0392B !important;
-    background-color: #FDF0EE !important;
-    border: 1px solid rgba(192, 57, 43, 0.25) !important;
-    border-radius: 6px !important;
-    padding: 8px 12px !important;
-    font-size: 0.88rem !important;
-    font-weight: 500 !important;
-}
-
-/* ── Success states ───────────────────────────────────────────── */
-.login .success,
-.login [class*="success"] {
-    color: #1E6B3C !important;
-    background-color: #EEF7F2 !important;
-    border: 1px solid rgba(30, 107, 60, 0.25) !important;
-    border-radius: 6px !important;
-    padding: 8px 12px !important;
-    font-size: 0.88rem !important;
-}
-
-/* ── Labels ───────────────────────────────────────────────────── */
-label span, .label-wrap span {
-    color: var(--lm-text-dark) !important;
-    font-weight: 600 !important;
-}
-
-/* ── Gradio footer ────────────────────────────────────────────── */
-footer {
-    background-color: var(--lm-dark-navy) !important;
-    padding: 12px 24px !important;
-}
-footer a, footer span {
-    color: var(--lm-yellow) !important;
-}
 """
 
 # ------------------------------------------------------------------
-# Dynamic text-color JS (WCAG luminance — runs in browser)
+# Fullscreen — JavaScript only, no CSS height/flex overrides
 # ------------------------------------------------------------------
 
-LM_JS = """
-() => {
-    function relativeLuminance(r, g, b) {
-        return [r, g, b].reduce((acc, c, i) => {
-            const v = c / 255;
-            const lin = v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-            return acc + lin * [0.2126, 0.7152, 0.0722][i];
-        }, 0);
-    }
+FULLSCREEN_JS = """
+<script>
+(function() {
+  function makeFullscreen() {
+    var styles = [
+      'width:100vw;max-width:100vw;',
+      'height:100vh;min-height:100vh;',
+      'margin:0;padding:0;overflow:hidden;'
+    ].join('');
 
-    function applyTextColor(bubble) {
-        const bg = window.getComputedStyle(bubble).backgroundColor;
-        const m  = bg.match(/[\\d.]+/g);
-        if (!m || m.length < 3) return;
-        // WCAG: white text when luminance < 0.179 (dark bg), dark otherwise
-        const lum   = relativeLuminance(+m[0], +m[1], +m[2]);
-        const color = lum < 0.179 ? '#FFFFFF' : '#1A1446';
-        bubble.style.setProperty('color', color, 'important');
-        bubble.querySelectorAll('p, span, a, strong, em, li, code, pre, td').forEach(el => {
-            el.style.setProperty('color', 'inherit', 'important');
-        });
-    }
+    var selectors = [
+      '.gradio-container',
+      'gradio-app',
+      'gradio-app > div',
+      '#root',
+      'body'
+    ];
 
-    function processBubbles() {
-        document.querySelectorAll('.bubble-wrap').forEach(applyTextColor);
-    }
-
-    processBubbles();
-    new MutationObserver(processBubbles).observe(document.body, {
-        childList: true,
-        subtree:   true,
+    selectors.forEach(function(sel) {
+      var els = document.querySelectorAll(sel);
+      els.forEach(function(el) {
+        el.style.cssText += styles;
+      });
     });
-}
+
+    var footers = document.querySelectorAll('footer, .footer');
+    footers.forEach(function(f) { f.style.display = 'none'; });
+  }
+
+  makeFullscreen();
+  document.addEventListener('DOMContentLoaded', makeFullscreen);
+  setTimeout(makeFullscreen, 500);
+  setTimeout(makeFullscreen, 1000);
+  setTimeout(makeFullscreen, 2000);
+  window.addEventListener('resize', makeFullscreen);
+})();
+</script>
 """
+
+# ------------------------------------------------------------------
+# HTML sections
+# ------------------------------------------------------------------
+
+HERO_HTML = """
+<div style="
+  background:#1A1446;
+  width:100%;
+  padding:16px 28px 0 28px;
+  box-sizing:border-box;
+  font-family:system-ui,-apple-system,sans-serif;
+">
+  <!-- Top row: logo + status -->
+  <div style="display:flex;align-items:center;
+    justify-content:space-between;margin-bottom:12px;">
+
+    <!-- Logo + wordmark -->
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:42px;height:42px;background:#FFD000;
+        border-radius:11px;display:flex;align-items:center;
+        justify-content:center;flex-shrink:0;">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <rect x="2" y="5" width="8" height="8" rx="2"
+            fill="#1A1446"/>
+          <rect x="2" y="16" width="8" height="3" rx="1.5"
+            fill="rgba(26,20,70,0.3)"/>
+          <rect x="16" y="10" width="8" height="8" rx="2"
+            fill="#1A1446" opacity="0.8"/>
+          <rect x="16" y="21" width="8" height="3" rx="1.5"
+            fill="rgba(26,20,70,0.2)"/>
+          <path d="M10 9 L13 9 L13 14 L16 14"
+            stroke="#1A1446" stroke-width="1.8"
+            fill="none" stroke-linecap="round"
+            stroke-linejoin="round"/>
+          <path d="M14 12 L16 14 L14 16"
+            stroke="#1A1446" stroke-width="1.8"
+            fill="none" stroke-linecap="round"
+            stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div style="font-size:20px;font-weight:500;
+          color:#FFFFFF;line-height:1.2;letter-spacing:-0.3px;">
+          Migrate<span style="color:#FFD000;">AI</span>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.45);
+          margin-top:2px;">
+          Intelligent data migration &middot; powered by GPT-4o
+        </div>
+      </div>
+    </div>
+
+    <!-- Status pill -->
+    <div style="display:flex;align-items:center;gap:6px;
+      padding:5px 12px;background:rgba(255,255,255,0.08);
+      border:0.5px solid rgba(255,255,255,0.15);
+      border-radius:20px;font-size:12px;
+      color:rgba(255,255,255,0.85);">
+      <span style="width:7px;height:7px;border-radius:50%;
+        background:#4ADE80;display:inline-block;"></span>
+      GPT-4o connected
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div style="margin-bottom:14px;">
+    <div style="font-size:14px;font-weight:500;color:#FFFFFF;
+      margin-bottom:4px;">
+      Move your data
+      <span style="color:#FFD000;">anywhere</span>,
+      in minutes &mdash; just by having a conversation.
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.5);
+      line-height:1.6;max-width:700px;">
+      No pipelines to build. No scripts to write.
+      No engineers needed. Tell MigrateAI your source
+      and destination, answer a few questions, and it
+      handles the rest &mdash; schema mapping, validation,
+      and delivery included.
+    </div>
+  </div>
+
+  <!-- Capability pills -->
+  <div style="display:flex;flex-wrap:wrap;gap:6px;
+    margin-bottom:14px;">
+    <span style="display:inline-flex;align-items:center;gap:6px;
+      padding:5px 11px;background:rgba(255,255,255,0.07);
+      border:0.5px solid rgba(255,255,255,0.13);
+      border-radius:7px;font-size:12px;
+      color:rgba(255,255,255,0.8);">
+      &#9889; <strong style="color:#fff;">One-time full loads</strong>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:6px;
+      padding:5px 11px;background:rgba(255,255,255,0.07);
+      border:0.5px solid rgba(255,255,255,0.13);
+      border-radius:7px;font-size:12px;
+      color:rgba(255,255,255,0.8);">
+      &#128737; <strong style="color:#fff;">Pre &amp; post validation</strong>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:6px;
+      padding:5px 11px;background:rgba(255,255,255,0.07);
+      border:0.5px solid rgba(255,255,255,0.13);
+      border-radius:7px;font-size:12px;
+      color:rgba(255,255,255,0.8);">
+      &#128172; <strong style="color:#fff;">Chat-driven config</strong>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:6px;
+      padding:5px 11px;background:rgba(255,255,255,0.07);
+      border:0.5px solid rgba(255,255,255,0.13);
+      border-radius:7px;font-size:12px;
+      color:rgba(255,255,255,0.8);">
+      &#128268; <strong style="color:#fff;">4 sources</strong>
+      &mdash; Postgres &middot; CSV &middot; S3 &middot; Mongo
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:6px;
+      padding:5px 11px;background:rgba(255,255,255,0.07);
+      border:0.5px solid rgba(255,255,255,0.13);
+      border-radius:7px;font-size:12px;
+      color:rgba(255,255,255,0.8);">
+      &#128452; <strong style="color:#fff;">4 destinations</strong>
+      &mdash; BigQuery &middot; SQLite &middot; S3 &middot; Snowflake
+    </span>
+  </div>
+
+  <!-- Tab bar -->
+  <div style="display:flex;border-top:0.5px solid
+    rgba(255,255,255,0.12);margin:0 -28px;">
+    <span style="padding:10px 20px;font-size:13px;
+      color:#FFFFFF;border-bottom:2px solid #FFD000;
+      cursor:pointer;">Chat</span>
+    <span style="padding:10px 20px;font-size:13px;
+      color:rgba(255,255,255,0.4);cursor:pointer;">History</span>
+    <span style="padding:10px 20px;font-size:13px;
+      color:rgba(255,255,255,0.4);cursor:pointer;">Output files</span>
+    <span style="padding:10px 20px;font-size:13px;
+      color:rgba(255,255,255,0.4);cursor:pointer;">Settings</span>
+  </div>
+</div>
+"""
+
+SIDEBAR_TOP_HTML = """
+<div style="
+  padding:14px 10px 6px;
+  font-family:system-ui,-apple-system,sans-serif;
+">
+  <div style="font-size:10px;font-weight:500;
+    color:rgba(255,255,255,0.35);letter-spacing:0.08em;
+    text-transform:uppercase;padding:0 8px;margin-bottom:6px;">
+    Quick Start
+  </div>
+</div>
+"""
+
+# ------------------------------------------------------------------
+# Agent wiring
+# ------------------------------------------------------------------
 
 from llm.agent import MigrationAgent
 from llm.tool_registry import build_default_registry
@@ -379,10 +358,6 @@ from migrations.executor import (
     migrate_mongo_to_s3,
 )
 
-# ------------------------------------------------------------------
-# Wire everything together
-# ------------------------------------------------------------------
-
 registry = build_default_registry(
     migrate_pg_to_bq      = migrate_postgres_to_bigquery,
     migrate_csv_to_sqlite = migrate_csv_to_sqlite,
@@ -392,129 +367,259 @@ registry = build_default_registry(
 
 agent = MigrationAgent(registry=registry)
 
+WELCOME_MESSAGE = (
+    "👋 Hey! I'm **MigrateAI** — your intelligent data migration assistant.\n\n"
+    "I can help you move data between systems in minutes, "
+    "just by having a conversation. No scripts, no pipelines, no engineers needed.\n\n"
+    "**To get started, either:**\n"
+    "- Click a **Quick Start** path in the sidebar →\n"
+    "- Or tell me what you want to migrate in your own words\n\n"
+    "**Supported sources:** Postgres · CSV · S3 · MongoDB\n"
+    "**Supported destinations:** BigQuery · SQLite · S3 · Snowflake"
+)
+
 # ------------------------------------------------------------------
-# Gradio callbacks
+# Last migration tracker
+# ------------------------------------------------------------------
+
+last_migration_store = {"entries": []}
+
+
+def update_last_migration(source: str, dest: str, rows: int = None) -> None:
+    entry = {
+        "label": f"{source} → {dest}",
+        "detail": f"{rows} rows" if rows else "done",
+        "time": datetime.datetime.now().strftime("%H:%M"),
+    }
+    last_migration_store["entries"].insert(0, entry)
+    last_migration_store["entries"] = last_migration_store["entries"][:3]
+
+
+def get_sidebar_bottom_html() -> str:
+    entries = last_migration_store.get("entries", [])
+
+    if not entries:
+        badges = """
+        <div style="font-size:11px;color:rgba(255,255,255,0.3);
+          padding:4px 8px;font-style:italic;">
+          No migrations yet
+        </div>
+        """
+    else:
+        badges = ""
+        for e in entries:
+            badges += f"""
+            <div style="display:flex;align-items:center;
+              justify-content:space-between;padding:5px 8px;
+              background:rgba(255,255,255,0.05);
+              border-radius:6px;margin-bottom:3px;
+              font-size:11px;color:rgba(255,255,255,0.6);">
+              <span>
+                <span style="width:5px;height:5px;
+                  border-radius:50%;background:#FFD000;
+                  display:inline-block;margin-right:5px;">
+                </span>
+                {e['label']}
+              </span>
+              <span>{e['detail']}</span>
+            </div>
+            """
+
+    return f"""
+    <div style="
+      padding:12px 10px;
+      margin-top:12px;
+      border-top:0.5px solid rgba(255,255,255,0.1);
+      font-family:system-ui,-apple-system,sans-serif;
+    ">
+      <div style="font-size:10px;font-weight:500;
+        color:rgba(255,255,255,0.35);letter-spacing:0.08em;
+        text-transform:uppercase;margin-bottom:8px;">
+        Last Migration
+      </div>
+      {badges}
+    </div>
+    """
+
+
+_COMPLETION_WORDS = {"rows", "migrated", "complete", "success", "transferred"}
+_MIGRATION_PAIRS = [
+    (("postgres",), ("bigquery",), "Postgres", "BigQuery"),
+    (("csv",),      ("sqlite",),   "CSV",      "SQLite"),
+    (("s3",),       ("snowflake",),"S3",       "Snowflake"),
+    (("mongo",),    ("s3",),       "Mongo",    "S3"),
+]
+
+
+def _detect_and_record_migration(text: str) -> None:
+    lower = text.lower()
+    if not any(w in lower for w in _COMPLETION_WORDS):
+        return
+    for src_keys, dst_keys, src_label, dst_label in _MIGRATION_PAIRS:
+        if any(k in lower for k in src_keys) and any(k in lower for k in dst_keys):
+            update_last_migration(src_label, dst_label)
+            return
+
+
+# ------------------------------------------------------------------
+# Callbacks
 # ------------------------------------------------------------------
 
 def respond(user_message: str, history: list[dict]) -> tuple:
-    """Called on every user message."""
     if not user_message.strip():
-        return history, ""
+        return history, "", get_sidebar_bottom_html()
     reply = agent.chat(user_message)
-    history.append({"role": "user", "content": user_message})
+    history.append({"role": "user",      "content": user_message})
     history.append({"role": "assistant", "content": reply})
-    return history, ""
+    _detect_and_record_migration(reply)
+    return history, "", get_sidebar_bottom_html()
+
+
+def run_quick_start(prompt: str, history: list[dict]) -> tuple:
+    reply = agent.chat(prompt)
+    history = history + [
+        {"role": "user",      "content": prompt},
+        {"role": "assistant", "content": reply},
+    ]
+    _detect_and_record_migration(reply)
+    _detect_and_record_migration(prompt)
+    return history, "", get_sidebar_bottom_html()
 
 
 def reset_session() -> tuple:
-    """Called when the user clicks 'New Migration'."""
     agent.reset()
-    return [], ""
+    last_migration_store["entries"] = []
+    return [{"role": "assistant", "content": WELCOME_MESSAGE}], "", get_sidebar_bottom_html()
 
 
 # ------------------------------------------------------------------
-# Gradio UI
+# UI
 # ------------------------------------------------------------------
 
-with gr.Blocks(title="migrate.ai", css=LM_CSS, js=LM_JS) as demo:
+with gr.Blocks(title="MigrateAI") as demo:
 
-    gr.HTML(
-        """
-        <div id="lm-header">
-            <h1>migrate.ai</h1>
-            <p><strong>AI-powered data migration assistant</strong></p>
-            <p>
-                Tell me what you want to migrate and I'll guide you through it.<br>
-                Sources: <code>postgres</code> <code>csv</code> <code>s3</code> <code>mongo</code>
-                &nbsp;→&nbsp;
-                Destinations: <code>bigquery</code> <code>postgres</code> <code>s3</code> <code>snowflake</code>
-            </p>
-        </div>
-        """
-    )
+    gr.HTML(FULLSCREEN_JS)
 
-    chatbot = gr.Chatbot(
-        label="Migration Chat",
-        height=480,
-    )
+    gr.HTML(HERO_HTML)
 
-    with gr.Row():
-        msg_input = gr.Textbox(
-            placeholder="e.g. I want to migrate my Postgres table to BigQuery",
-            show_label=False,
-            scale=9,
-        )
-        send_btn = gr.Button("Send", variant="primary", scale=1)
+    with gr.Row(equal_height=True):
 
-    with gr.Row():
-        reset_btn = gr.Button("🔄 New Migration", variant="secondary")
+        with gr.Column(scale=0, min_width=240, elem_id="sidebar-col"):
+            gr.HTML(SIDEBAR_TOP_HTML)
+            btn_pg_bq  = gr.Button(
+                "🗄  Postgres → BigQuery",
+                elem_id="qs-btn-1",
+                variant="secondary",
+                size="sm",
+            )
+            btn_csv_sl = gr.Button(
+                "📄  CSV → SQLite",
+                elem_id="qs-btn-2",
+                variant="secondary",
+                size="sm",
+            )
+            btn_s3_sf  = gr.Button(
+                "☁️   S3 → Snowflake",
+                elem_id="qs-btn-3",
+                variant="secondary",
+                size="sm",
+            )
+            btn_mg_s3  = gr.Button(
+                "🍃  Mongo → S3",
+                elem_id="qs-btn-4",
+                variant="secondary",
+                size="sm",
+            )
+            sidebar_bottom = gr.HTML(
+                value=get_sidebar_bottom_html(),
+                elem_id="sidebar-bottom",
+            )
+            reset_btn = gr.Button(
+                "+ New Migration",
+                elem_id="new-migration-btn",
+                variant="primary",
+                size="sm",
+            )
 
-    gr.Examples(
-        examples=[
-            "I want to migrate data from Postgres to BigQuery",
-            "I need to load a CSV file into Postgres",
-            "Export a MongoDB collection to S3",
-            "Move data from S3 to Snowflake",
-        ],
-        inputs=msg_input,
-        label="Quick starts",
-    )
+        with gr.Column(scale=1, elem_id="chat-col"):
+            chatbot = gr.Chatbot(
+                value=[{"role": "assistant", "content": WELCOME_MESSAGE}],
+                label="",
+                height=500,
+                show_label=False,
+                elem_id="chatbot",
+            )
+            with gr.Row():
+                msg_input = gr.Textbox(
+                    placeholder="Type your reply…",
+                    show_label=False,
+                    lines=1,
+                    scale=9,
+                    container=False,
+                    elem_id="msg-input",
+                )
+                send_btn = gr.Button(
+                    "↑",
+                    variant="primary",
+                    scale=0,
+                    min_width=48,
+                    elem_id="send-btn",
+                )
 
     # Event bindings
-    send_btn.click(respond, [msg_input, chatbot], [chatbot, msg_input])
-    msg_input.submit(respond, [msg_input, chatbot], [chatbot, msg_input])
-    reset_btn.click(reset_session, outputs=[chatbot, msg_input])
+    send_btn.click(
+        fn=respond,
+        inputs=[msg_input, chatbot],
+        outputs=[chatbot, msg_input, sidebar_bottom],
+    )
+    msg_input.submit(
+        fn=respond,
+        inputs=[msg_input, chatbot],
+        outputs=[chatbot, msg_input, sidebar_bottom],
+    )
+
+    btn_pg_bq.click(
+        fn=lambda h: run_quick_start(
+            "I want to migrate data from Postgres to BigQuery", h
+        ),
+        inputs=[chatbot],
+        outputs=[chatbot, msg_input, sidebar_bottom],
+    )
+    btn_csv_sl.click(
+        fn=lambda h: run_quick_start(
+            "I need to load a CSV file into SQLite", h
+        ),
+        inputs=[chatbot],
+        outputs=[chatbot, msg_input, sidebar_bottom],
+    )
+    btn_s3_sf.click(
+        fn=lambda h: run_quick_start(
+            "I want to migrate data from S3 to Snowflake", h
+        ),
+        inputs=[chatbot],
+        outputs=[chatbot, msg_input, sidebar_bottom],
+    )
+    btn_mg_s3.click(
+        fn=lambda h: run_quick_start(
+            "I want to export a MongoDB collection to S3", h
+        ),
+        inputs=[chatbot],
+        outputs=[chatbot, msg_input, sidebar_bottom],
+    )
+    reset_btn.click(
+        fn=reset_session,
+        outputs=[chatbot, msg_input, sidebar_bottom],
+    )
 
 
 if __name__ == "__main__":
-    # ── Liberty Mutual Gradio theme ────────────────────────────────
-    # gr.Blocks(css=...) only reaches the main app page.
-    # The /login page is a separate Gradio route that only responds
-    # to the theme object — so all login colours are set here.
-    lm_theme = gr.themes.Default().set(
-        # Page & container backgrounds
-        body_background_fill="#F4F4F4",
-        block_background_fill="#FFFFFF",
-        panel_background_fill="#FFFFFF",
-        # Primary button → Liberty Yellow
-        button_primary_background_fill="#FFD000",
-        button_primary_background_fill_hover="#E6BB00",
-        button_primary_background_fill_dark="#FFD000",
-        button_primary_text_color="#1A1446",
-        button_primary_text_color_hover="#1A1446",
-        button_primary_border_color="#FFD000",
-        button_primary_border_color_hover="#E6BB00",
-        # Secondary button → outlined Liberty Blue
-        button_secondary_background_fill="#FFFFFF",
-        button_secondary_background_fill_hover="#1A1446",
-        button_secondary_text_color="#1A1446",
-        button_secondary_text_color_hover="#FFFFFF",
-        button_secondary_border_color="#1A1446",
-        # Input fields
-        input_background_fill="#FFFFFF",
-        input_border_color="rgba(26,20,70,0.25)",
-        input_border_color_focus="#1A1446",
-        input_border_color_hover="rgba(26,20,70,0.5)",
-        input_shadow_focus="0 0 0 3px rgba(26,20,70,0.13)",
-        # Text
-        body_text_color="#1A1446",
-        block_title_text_color="#1A1446",
-        block_label_text_color="#1A1446",
-        link_text_color="#1A1446",
-        link_text_color_hover="#002663",
-        link_text_color_active="#002663",
-        link_text_color_visited="#1A1446",
-        # Borders & shadows
-        block_border_color="rgba(26,20,70,0.15)",
-        block_shadow="0 2px 8px rgba(26,20,70,0.08), 0 8px 32px rgba(26,20,70,0.10)",
-    )
-
     demo.launch(
         server_name="0.0.0.0",
         server_port=7860,
-        share=True,
+        share=False,
         inbrowser=True,
         auth=(settings.APP_USERNAME, settings.APP_PASSWORD),
         auth_message="migrate.ai — please log in to continue",
-        theme=lm_theme,
+        theme=gr.themes.Soft(),
+        css=CUSTOM_CSS,
     )
