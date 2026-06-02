@@ -1,6 +1,11 @@
 import streamlit as st
 import datetime
 
+
+def _html(raw: str) -> str:
+    """Strip per-line leading whitespace so Markdown never treats indented lines as code blocks."""
+    return "\n".join(line.lstrip() for line in raw.splitlines())
+
 st.set_page_config(
     page_title="MigrateAI",
     page_icon="🔄",
@@ -505,7 +510,7 @@ def send_message(prompt: str) -> None:
 # ── SECTION G — Render hero ────────────────────────────────────────
 # Hero must render BEFORE sidebar and chat
 # so it appears above everything
-st.markdown(HERO_HTML, unsafe_allow_html=True)
+st.markdown(_html(HERO_HTML), unsafe_allow_html=True)
 
 
 # ── SECTION H — Sidebar ────────────────────────────────────────────
@@ -542,7 +547,7 @@ def build_last_migration_html() -> str:
               <span>{e['detail']}</span>
             </div>
             """
-    return f"""
+    return _html(f"""
     <div style="padding:12px 4px;
       font-family:system-ui,-apple-system,sans-serif;">
       <div style="font-size:10px;font-weight:500;
@@ -553,13 +558,13 @@ def build_last_migration_html() -> str:
       </div>
       {badges}
     </div>
-    """
+    """)
 
 
 with st.sidebar:
 
     # Quick Start label
-    st.markdown("""
+    st.markdown(_html("""
     <div style="padding:14px 4px 6px;
       font-family:system-ui,-apple-system,sans-serif;">
       <div style="font-size:10px;font-weight:500;
@@ -569,7 +574,7 @@ with st.sidebar:
         Quick Start
       </div>
     </div>
-    """, unsafe_allow_html=True)
+    """), unsafe_allow_html=True)
 
     # Quick start buttons — each calls send_message() then st.rerun()
     if st.button(
