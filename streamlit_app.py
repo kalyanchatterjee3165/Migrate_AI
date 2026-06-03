@@ -24,7 +24,14 @@ from migrations.executor import (  # noqa: E402
 CUSTOM_CSS = """
 <style>
 
-/* 1. HIDE ALL STREAMLIT CHROME */
+/* ── 0. ANTI-FLASH: dark bg before Streamlit hydrates ───────────── */
+/* html gets the hero colour so the loading phase is never white      */
+html {
+  background: #1A1446 !important;
+  height: 100% !important;
+}
+
+/* ── 1. HIDE ALL STREAMLIT CHROME ──────────────────────────────── */
 #MainMenu,
 header[data-testid="stHeader"],
 footer,
@@ -37,18 +44,23 @@ footer,
   display: none !important;
 }
 
-/* 2. FULLSCREEN */
-html, body {
+/* ── 2. FULLSCREEN — truly edge-to-edge, zero leaking bg ───────── */
+body {
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
   width: 100vw !important;
   height: 100vh !important;
+  background: #F4F4F4 !important;
 }
 
 .stApp {
   background: #F4F4F4 !important;
   overflow: hidden !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
 }
 
 [data-testid="stAppViewContainer"] {
@@ -56,6 +68,7 @@ html, body {
   padding: 0 !important;
   height: 100vh !important;
   overflow: hidden !important;
+  display: flex !important;
 }
 
 [data-testid="stAppViewBlockContainer"],
@@ -64,21 +77,36 @@ html, body {
   width: 100% !important;
   padding: 0 !important;
   margin: 0 !important;
+  overflow: hidden !important;
 }
 
-/* 3. SIDEBAR */
+/* Kill default gap between Streamlit vertical blocks */
+[data-testid="stVerticalBlock"],
+[data-testid="stVerticalBlockBorderWrapper"] {
+  gap: 0 !important;
+}
+
+/* ── 3. SIDEBAR ─────────────────────────────────────────────────── */
 [data-testid="stSidebar"] {
   background: #002663 !important;
   min-width: 240px !important;
   max-width: 240px !important;
   width: 240px !important;
   padding: 0 !important;
+  height: 100vh !important;
+  overflow-y: auto !important;
+  scrollbar-width: none !important;
+}
+
+[data-testid="stSidebar"]::-webkit-scrollbar {
+  display: none !important;
 }
 
 [data-testid="stSidebar"] > div,
 [data-testid="stSidebarContent"] {
   background: #002663 !important;
   padding: 0 8px !important;
+  height: 100% !important;
 }
 
 [data-testid="stSidebar"] p,
@@ -99,11 +127,13 @@ html, body {
   box-shadow: none !important;
   margin-bottom: 2px !important;
   justify-content: flex-start !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
 }
 
 [data-testid="stSidebar"] .stButton > button p {
   color: rgba(255,255,255,0.75) !important;
   font-size: 13px !important;
+  transition: color 0.15s ease !important;
 }
 
 [data-testid="stSidebar"] .stButton > button:hover {
@@ -122,6 +152,7 @@ html, body {
   border: none !important;
   box-shadow: none !important;
   border-radius: 8px !important;
+  transition: background 0.15s ease !important;
 }
 
 [data-testid="stSidebar"] button[kind="primary"] p {
@@ -132,24 +163,38 @@ html, body {
   background: #E6BB00 !important;
 }
 
-/* 4. CHAT MESSAGES */
+/* ── 4. CHAT MESSAGES ───────────────────────────────────────────── */
 [data-testid="stChatMessageContainer"] {
   background: #F4F4F4 !important;
-  padding: 16px !important;
-  padding-bottom: 80px !important;
+  padding: 20px 24px 84px !important;
+  overflow-y: auto !important;
+  scroll-behavior: smooth !important;
 }
 
+/* Slim themed scrollbar */
+[data-testid="stChatMessageContainer"]::-webkit-scrollbar {
+  width: 3px !important;
+}
+[data-testid="stChatMessageContainer"]::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+[data-testid="stChatMessageContainer"]::-webkit-scrollbar-thumb {
+  background: rgba(26,20,70,0.18) !important;
+  border-radius: 2px !important;
+}
+
+/* AI bubble */
 [data-testid="stChatMessage"]:has(
   [data-testid="stChatMessageAvatarAssistant"]
 ) {
   background: #FFFFFF !important;
-  border: 0.5px solid rgba(26,20,70,0.13) !important;
-  border-radius: 2px 12px 12px 12px !important;
-  padding: 10px 14px !important;
-  max-width: 80% !important;
+  border: 0.5px solid rgba(26,20,70,0.1) !important;
+  border-radius: 2px 14px 14px 14px !important;
+  padding: 12px 16px !important;
+  max-width: 78% !important;
   align-self: flex-start !important;
-  margin-bottom: 10px !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+  margin-bottom: 12px !important;
+  box-shadow: 0 1px 6px rgba(26,20,70,0.07) !important;
 }
 
 [data-testid="stChatMessage"]:has(
@@ -163,18 +208,21 @@ html, body {
 ) * {
   color: #1A1446 !important;
   font-size: 13px !important;
+  line-height: 1.65 !important;
 }
 
+/* User bubble */
 [data-testid="stChatMessage"]:has(
   [data-testid="stChatMessageAvatarUser"]
 ) {
   background: #1A1446 !important;
-  border-radius: 12px 2px 12px 12px !important;
-  padding: 10px 14px !important;
-  max-width: 80% !important;
+  border-radius: 14px 2px 14px 14px !important;
+  padding: 12px 16px !important;
+  max-width: 78% !important;
   align-self: flex-end !important;
   margin-left: auto !important;
-  margin-bottom: 10px !important;
+  margin-bottom: 12px !important;
+  box-shadow: 0 1px 6px rgba(26,20,70,0.22) !important;
 }
 
 [data-testid="stChatMessage"]:has(
@@ -185,8 +233,10 @@ html, body {
 ) * {
   color: #FFFFFF !important;
   font-size: 13px !important;
+  line-height: 1.65 !important;
 }
 
+/* Hide avatars and all action/copy buttons */
 [data-testid="stChatMessageAvatarAssistant"],
 [data-testid="stChatMessageAvatarUser"] {
   display: none !important;
@@ -201,39 +251,56 @@ html, body {
   display: none !important;
 }
 
-/* 5. CHAT INPUT — pinned to bottom */
+/* ── 5. CHAT INPUT — pinned, frosted glass ──────────────────────── */
 .stChatFloatingInputContainer {
   position: fixed !important;
   bottom: 0 !important;
   left: 240px !important;
   right: 0 !important;
-  background: #FFFFFF !important;
-  border-top: 0.5px solid rgba(26,20,70,0.13) !important;
-  padding: 10px 16px !important;
+  background: rgba(244,244,244,0.96) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(26,20,70,0.1) !important;
+  padding: 10px 20px !important;
   z-index: 999 !important;
+  box-shadow: 0 -2px 16px rgba(26,20,70,0.06) !important;
 }
 
 [data-testid="stChatInput"] {
-  border: 1px solid rgba(26,20,70,0.2) !important;
-  border-radius: 10px !important;
+  border: 1px solid rgba(26,20,70,0.18) !important;
+  border-radius: 12px !important;
   background: #FFFFFF !important;
+  box-shadow: 0 1px 4px rgba(26,20,70,0.05) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+[data-testid="stChatInput"]:focus-within {
+  border-color: rgba(26,20,70,0.32) !important;
+  box-shadow: 0 0 0 3px rgba(26,20,70,0.06) !important;
 }
 
 [data-testid="stChatInput"] textarea {
   background: #FFFFFF !important;
   color: #1A1446 !important;
   font-size: 13px !important;
+  line-height: 1.5 !important;
 }
 
 [data-testid="stChatInput"] textarea::placeholder {
-  color: rgba(26,20,70,0.35) !important;
+  color: rgba(26,20,70,0.3) !important;
 }
 
 [data-testid="stChatInput"] button {
   background: #FFD000 !important;
   color: #1A1446 !important;
-  border-radius: 8px !important;
+  border-radius: 9px !important;
   border: none !important;
+  transition: background 0.15s ease, transform 0.1s ease !important;
+}
+
+[data-testid="stChatInput"] button:hover {
+  background: #E6BB00 !important;
+  transform: scale(1.05) !important;
 }
 
 [data-testid="stChatInput"] button svg {
