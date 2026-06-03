@@ -112,6 +112,9 @@ html, body {
 
 /* ---- E. Main area — offset by hero height + sidebar width ---- */
 /* messages live here; THIS is the only scrollable region */
+/* In this Streamlit version the main wrapper is an anonymous <div>
+   (stAppViewContainer's only div child; the sidebar is a <section>) */
+[data-testid="stAppViewContainer"] > div,
 [data-testid="stAppViewContainer"] > .main,
 section.main {
     margin-top: 22vh !important;
@@ -121,8 +124,10 @@ section.main {
     background: #F4F4F4 !important;
 }
 
-.main .block-container,
-[data-testid="stAppViewBlockContainer"] {
+/* block-container testid changed to stMainBlockContainer in newer Streamlit */
+[data-testid="stMainBlockContainer"],
+[data-testid="stAppViewBlockContainer"],
+.main .block-container {
     max-width: 100% !important;
     width: 100% !important;
     padding: 1rem 1.5rem 1rem 1.5rem !important;
