@@ -1,4 +1,4 @@
-# migrate.ai — Claude Code Project Guide
+# MigrateAI — Claude Code Project Guide
 
 ## What This Project Is
 
@@ -14,11 +14,13 @@ No real databases or cloud services are connected.
 
 ## Branches
 
-| Branch          | Frontend         | Run command                               |
-|-----------------|------------------|-------------------------------------------|
-| `fastapi-react` | React + FastAPI  | see **How to Run** below ← active branch  |
-| `main`          | Gradio           | `python app.py`                           |
-| `streamlit`     | Streamlit        | `streamlit run streamlit_app.py`          |
+| Branch           | Frontend                    | Run command                                    |
+|------------------|-----------------------------|------------------------------------------------|
+| `fastapi-react`  | Next.js 16 + React + FastAPI | see **How to Run** below ← active branch      |
+| `main`           | Gradio                      | `python app.py`                                |
+| `streamlit`      | Streamlit                   | `streamlit run streamlit_app.py`               |
+| `streamlit-ui`   | Streamlit (rebuilt)         | `streamlit run streamlit_app.py`               |
+| `fastapi-nextjs` | Next.js + FastAPI           | `cd frontend-next && npm run dev`             |
 
 Backend logic (LLM agent, tools, migrations) is identical across all branches.
 
@@ -28,12 +30,12 @@ Backend logic (LLM agent, tools, migrations) is identical across all branches.
 
 - **LLM**: Any OpenAI-compatible API — configured via `.env` (OpenAI, Gemini, Groq, Ollama…)
 - **Backend**: FastAPI + Uvicorn (`backend/main.py`)
-- **Frontend**: React 18 + Vite, plain CSS with token variables (no Tailwind, no CSS-in-JS)
+- **Frontend (primary)**: Next.js 16, App Router, TypeScript, Tailwind CSS (`frontend-next/`)
+- **Frontend (legacy)**: React 18 + Vite, plain CSS with token variables (`frontend/`)
 - **Markdown rendering**: `react-markdown` (chat bubbles)
-- **Icons**: `lucide-react`
 - **Data generation**: `faker`, `pandas`
 - **Database**: `sqlalchemy` (SQLite destination)
-- **Python**: 3.11+  |  **Node**: 18+
+- **Python**: 3.11+  |  **Node**: 20+
 
 ---
 
@@ -41,69 +43,86 @@ Backend logic (LLM agent, tools, migrations) is identical across all branches.
 
 ```
 migrate-ai/
-├── .env.example                  # copy to .env and fill in values
-├── docker-compose.yml            # runs backend + frontend together
-├── CLAUDE.md                     # You are here
+├── .env.example                      # copy to .env and fill in values
+├── docker-compose.yml                # runs backend + frontend-next together
+├── CLAUDE.md                         # You are here
+├── README.md                         # user-facing documentation
 │
-├── backend/                      # FastAPI server
-│   ├── main.py                   # FastAPI app entry point — run this
+├── backend/                          # FastAPI server
+│   ├── main.py                       # FastAPI app entry point — run this
 │   ├── requirements.txt
 │   ├── Dockerfile
+│   ├── test.py                       # end-to-end API tests (python test.py)
 │   │
 │   ├── config/
-│   │   └── settings.py           # loads .env — LLM_*, OUTPUT_DIR, LOG_LEVEL
-│   │
-│   ├── routers/
-│   │   ├── chat.py               # POST /api/chat
-│   │   ├── session.py            # POST /api/reset · GET /api/status · GET /api/output
-│   │   └── migrations.py         # POST /api/migrate · GET /api/migrate/types
-│   │
-│   ├── schemas/
-│   │   └── chat.py               # Pydantic models: ChatRequest, ChatResponse, …
+│   │   └── settings.py               # loads .env — LLM_*, OUTPUT_DIR, LOG_LEVEL
 │   │
 │   ├── middleware/
-│   │   └── session_manager.py    # Thread-safe per-session MigrationAgent registry
+│   │   └── session_manager.py        # thread-safe per-session MigrationAgent registry
+│   │
+│   ├── routers/
+│   │   ├── chat.py                   # POST /api/chat
+│   │   ├── session.py                # POST /api/reset · GET /api/status · GET /api/output
+│   │   └── migrations.py            # POST /api/migrate · GET /api/migrate/types
+│   │
+│   ├── schemas/
+│   │   └── chat.py                   # Pydantic models: ChatRequest, ChatResponse, …
 │   │
 │   ├── llm/
-│   │   ├── agent.py              # MigrationAgent — chat loop + tool dispatch
-│   │   ├── prompts.py            # SYSTEM_PROMPT
-│   │   └── tool_registry.py      # ToolRegistry + OpenAI-format tool schemas
+│   │   ├── agent.py                  # MigrationAgent — chat loop + tool dispatch
+│   │   ├── prompts.py                # SYSTEM_PROMPT
+│   │   └── tool_registry.py          # ToolRegistry + OpenAI-format tool schemas
 │   │
 │   ├── tools/
-│   │   ├── base.py               # BaseTool interface
-│   │   ├── generators/           # Faker-based DataFrame generation
-│   │   ├── sources/              # Fake Postgres, CSV, S3, MongoDB reads
-│   │   └── destinations/         # Fake BigQuery, SQLite, S3, Snowflake writes
+│   │   ├── base.py                   # BaseTool interface
+│   │   ├── generators/               # Faker-based DataFrame generation
+│   │   ├── sources/                  # Fake Postgres, CSV, S3, MongoDB reads
+│   │   └── destinations/             # Fake BigQuery, SQLite, S3, Snowflake writes
 │   │
 │   ├── migrations/
-│   │   ├── executor.py           # Wires source.read() → dest.write()
-│   │   └── validator.py          # Fake pre/post row count + schema checks
+│   │   ├── executor.py               # Wires source.read() → dest.write()
+│   │   └── validator.py              # Fake pre/post row count + schema checks
 │   │
 │   ├── session/
-│   │   └── state.py              # Per-conversation config state
+│   │   └── state.py                  # Per-conversation config state
 │   │
-│   └── output/                   # Simulated migration output files land here
+│   └── output/                       # Simulated migration output files land here
 │
-└── frontend/                     # React + Vite UI
+├── frontend-next/                    # Next.js 16 frontend (primary)
+│   ├── next.config.ts                # proxies /api/* → backend; standalone output
+│   ├── Dockerfile                    # multi-stage production build
+│   ├── package.json
+│   └── src/
+│       ├── app/
+│       │   ├── layout.tsx            # root layout
+│       │   ├── page.tsx              # renders <MigrateApp />
+│       │   └── globals.css           # CSS variables + reset
+│       ├── components/
+│       │   ├── MigrateApp.tsx        # root layout assembles all panels
+│       │   ├── Hero.tsx              # full-width header (logo, pills, tabs)
+│       │   ├── Sidebar.tsx           # Quick Start buttons + Last Migration
+│       │   ├── ChatArea.tsx          # scrollable message list
+│       │   ├── Message.tsx           # single AI/user bubble (renders markdown)
+│       │   ├── InputBar.tsx          # textarea + send button
+│       │   ├── ConfigCard.tsx        # migration config summary card
+│       │   └── TypingIndicator.tsx   # 3-dot bounce animation
+│       ├── hooks/
+│       │   ├── useChat.ts            # all chat state + API calls + detectMigration
+│       │   └── useSession.ts         # UUID session_id per browser tab (sessionStorage)
+│       ├── api/
+│       │   └── client.ts             # typed fetch wrappers for all backend endpoints
+│       └── types/
+│           └── index.ts              # shared TypeScript interfaces
+│
+└── frontend/                         # React 18 + Vite (legacy)
     ├── package.json
-    ├── vite.config.js            # proxies /api → localhost:8000
+    ├── vite.config.js                # proxies /api → localhost:8000
     └── src/
-        ├── App.jsx               # Root — assembles Hero + Sidebar + Chat
-        ├── api/
-        │   └── chat.js           # fetch wrappers: sendMessage, resetSession, …
-        ├── hooks/
-        │   └── useChat.js        # all chat state + send + reset logic
-        ├── styles/
-        │   ├── tokens.css        # CSS custom properties (brand colours, spacing)
-        │   └── global.css        # CSS reset + base styles
-        └── components/
-            ├── Hero.jsx          # Full-width header — logo, wordmark, pills, tabs
-            ├── Sidebar.jsx       # Quick start buttons + Last Migration section
-            ├── ChatArea.jsx      # Scrollable message list
-            ├── Message.jsx       # Single AI / user bubble — renders markdown
-            ├── ConfigCard.jsx    # Migration config summary card
-            ├── TypingIndicator.jsx
-            └── InputBar.jsx      # Textarea + send button
+        ├── App.jsx
+        ├── api/chat.js
+        ├── hooks/useChat.js
+        ├── styles/tokens.css
+        └── components/               # Hero, Sidebar, ChatArea, Message, InputBar, …
 ```
 
 ---
@@ -114,8 +133,8 @@ migrate-ai/
 
 ```bash
 docker compose up --build
-# Frontend → http://localhost:3000
-# Backend  → http://localhost:8000
+# Frontend (Next.js) → http://localhost:3000
+# Backend            → http://localhost:8000
 ```
 
 ### Option B — Local dev (two terminals)
@@ -126,10 +145,10 @@ cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 
-# Terminal 2 — Frontend
-cd frontend
+# Terminal 2 — Frontend (Next.js)
+cd frontend-next
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # http://localhost:3000
 ```
 
 ---
@@ -140,24 +159,20 @@ npm run dev          # http://localhost:5173
 # Backend — hot reload
 cd backend && uvicorn main:app --reload --port 8000
 
+# Run API tests (backend must be running first)
+cd backend && python test.py
+
+# View interactive API docs
+open http://localhost:8000/docs
+
 # Frontend — Next.js dev server (http://localhost:3000)
 cd frontend-next && npm run dev
 
-# Both simultaneously:
-# Terminal 1: cd backend && uvicorn main:app --reload --port 8000
-# Terminal 2: cd frontend-next && npm run dev
+# Frontend — Next.js production build
+cd frontend-next && npm run build
 
-# Run tests (backend must be running first)
-cd backend && python test.py
-
-# View API docs
-open http://localhost:8000/docs
-
-# Frontend — Vite dev server
+# Frontend — legacy React/Vite (http://localhost:5173)
 cd frontend && npm run dev
-
-# Frontend — production build
-cd frontend && npm run build
 
 # Both via Docker
 docker compose up --build
@@ -173,8 +188,8 @@ cd backend && flake8 . --max-line-length=100
 
 ## LLM Configuration
 
-All three variables live in the root `.env` file.
-Changing them requires only a server restart — no code changes.
+All variables live in the root `.env` file.
+A server restart is all that's needed after changing them — no code changes.
 
 | Variable            | Required | Default  | Purpose                                         |
 |---------------------|----------|----------|-------------------------------------------------|
@@ -182,10 +197,6 @@ Changing them requires only a server restart — no code changes.
 | `LLM_BASE_URL`      | No       | —        | OpenAI-compatible endpoint; blank = OpenAI      |
 | `LLM_MODEL`         | No       | `gpt-4o` | Model name supported by the chosen provider     |
 | `LLM_EXTRA_HEADERS` | No       | —        | JSON object — sent as headers on every LLM call |
-
-**Where these are used:**
-- `backend/config/settings.py` — parsed from env
-- `backend/llm/agent.py` — `MigrationAgent.__init__` builds the `OpenAI` client with `api_key`, `base_url`, and `default_headers`
 
 **Provider examples:**
 
@@ -211,18 +222,18 @@ LLM_EXTRA_HEADERS={"use-case": "data-migration", "x-team": "platform"}
 
 ## API Endpoints
 
-| Method | Path                        | Description                                      |
-|--------|-----------------------------|--------------------------------------------------|
-| GET    | `/`                         | Health root — name, version, status              |
-| GET    | `/api/status`               | Model info + active session count                |
-| POST   | `/api/chat`                 | Send message to agent (session-isolated)         |
-| POST   | `/api/reset`                | Clear session conversation history               |
-| DELETE | `/api/session/{id}`         | Remove a session and free its memory             |
-| GET    | `/api/sessions`             | List all active session IDs                      |
-| GET    | `/api/output`               | List files in `backend/output/`                  |
-| GET    | `/files/{filename}`         | Download an output file                          |
-| POST   | `/api/migrate`              | Directly trigger a migration (bypass agent)      |
-| GET    | `/api/migrate/types`        | List migration types + required config fields    |
+| Method | Path                    | Description                                      |
+|--------|-------------------------|--------------------------------------------------|
+| GET    | `/`                     | Health root — name, version, status              |
+| GET    | `/api/status`           | Model info + active session count                |
+| POST   | `/api/chat`             | Send message to agent (session-isolated)         |
+| POST   | `/api/reset`            | Clear session conversation history               |
+| DELETE | `/api/session/{id}`     | Remove a session and free its memory             |
+| GET    | `/api/sessions`         | List all active session IDs                      |
+| GET    | `/api/output`           | List files in `backend/output/`                  |
+| GET    | `/files/{filename}`     | Download an output file                          |
+| POST   | `/api/migrate`          | Directly trigger a migration (bypass agent)      |
+| GET    | `/api/migrate/types`    | List migration types + required config fields    |
 
 Interactive docs: **http://localhost:8000/docs**
 
@@ -241,15 +252,15 @@ The LLM decides when it has collected enough config — no hardcoded flow.
 migration paths. Add a schema method + call `registry.register()` in
 `build_default_registry()`.
 
-**Stateful per-session agent**: `MigrationAgent.history` holds the full
-message list. `agent.reset()` clears it. `POST /api/reset` triggers this
-from the frontend.
+**Per-session agent isolation**: `SessionManager` in `middleware/session_manager.py`
+maintains a thread-safe dict of `MigrationAgent` instances keyed by `session_id`.
+Every API endpoint that talks to an agent must accept a `session_id`.
 
-**Plain CSS + tokens**: All colour/spacing values live in `tokens.css` as
-CSS custom properties. No Tailwind, no CSS-in-JS.
+**Next.js proxy**: `next.config.ts` rewrites `/api/*` to the FastAPI backend,
+so the frontend never makes cross-origin requests in development or Docker.
 
-**Markdown in chat**: `Message.jsx` uses `react-markdown` with custom
-component overrides so that bubble text colour is always inherited correctly.
+**TypeScript throughout**: All frontend code in `frontend-next/` is `.ts`/`.tsx`.
+No `.js` files except config.
 
 ---
 
@@ -260,7 +271,7 @@ component overrides so that bubble text colour is always inherited correctly.
 3. Add a handler function in `backend/migrations/executor.py`
 4. Add the JSON schema as a static method in `backend/llm/tool_registry.py`
 5. Register it in `build_default_registry()`
-6. Update `backend/connectors.yaml`
+6. Update `backend/config/connectors.yaml`
 7. Update `SYSTEM_PROMPT` in `backend/llm/prompts.py`
 
 ---
@@ -282,7 +293,7 @@ component overrides so that bubble text colour is always inherited correctly.
 - Do not store credentials anywhere except `.env` (gitignored)
 - Do not put business logic in `main.py` — it is only app wiring
 - Do not break the `BaseTool` / `BaseSource` / `BaseDestination` interfaces
-- Do not use Tailwind or CSS-in-JS — plain CSS + `tokens.css` variables only
 - Do not use Redux or Zustand — `useState` + custom hooks only
-- Keep `App.jsx` under 80 lines — all logic in hooks, all UI in components
+- Do not use a component library (shadcn, MUI, etc.) — build from scratch
 - Do not hardcode the LLM model or API key — always read from `settings.py`
+- Every endpoint that talks to an agent must accept `session_id`
