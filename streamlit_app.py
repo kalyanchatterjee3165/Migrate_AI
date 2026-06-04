@@ -6,7 +6,7 @@ st.set_page_config(
     page_title="MigrateAI",
     page_icon="🔄",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ── SECTION 2 — Backend imports ───────────────────────────────────────────────
@@ -20,236 +20,256 @@ from migrations.executor import (
     migrate_mongo_to_s3,
 )
 
-# ── SECTION 3 — CSS (one single injected block — the heart of the layout) ─────
-st.markdown("""
+# ── SECTION 3 — CSS ───────────────────────────────────────────────────────────
+CUSTOM_CSS = """
 <style>
 
-/* ---- A. Kill Streamlit chrome ---- */
-#MainMenu,
-header[data-testid="stHeader"],
-footer,
-.stDeployButton,
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-[data-testid="stStatusWidget"],
+/* ── HIDE CHROME ── */
+#MainMenu, header[data-testid="stHeader"], footer,
+.stDeployButton, [data-testid="stToolbar"],
+[data-testid="stDecoration"], [data-testid="stStatusWidget"],
 [data-testid="collapsedControl"],
-[data-testid="stSidebarCollapseButton"],
-button[kind="header"] {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
+[data-testid="stSidebarCollapseButton"] {
+  display: none !important;
 }
 
-/* ---- B. Lock the page — never scroll, always fill viewport ---- */
+/* ── FULLSCREEN ── */
 html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    height: 100vh !important;
-    width: 100vw !important;
-    overflow: hidden !important;
+  margin: 0 !important; padding: 0 !important;
+  width: 100vw !important; height: 100vh !important;
+  overflow: hidden !important;
 }
 
-.stApp {
-    height: 100vh !important;
-    width: 100vw !important;
-    overflow: hidden !important;
-    background: #F4F4F4 !important;
+.stApp, [data-testid="stAppViewContainer"] {
+  width: 100vw !important; height: 100vh !important;
+  max-width: 100vw !important;
+  overflow: hidden !important;
+  background: #1A1446 !important;
+  padding: 0 !important; margin: 0 !important;
 }
 
-[data-testid="stAppViewContainer"] {
-    height: 100vh !important;
-    overflow: hidden !important;
-    background: #F4F4F4 !important;
-}
-
-/* ---- C. Hero — FIXED bar at top, height in vh so zoom-stable ---- */
-#hero-bar {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100vw !important;
-    height: 22vh !important;
-    min-height: 160px !important;
-    background: #1A1446 !important;
-    z-index: 1000 !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-    padding: 1.4vh 28px 0 28px !important;
-    font-family: system-ui, -apple-system, sans-serif !important;
-}
-
-/* ---- D. Sidebar — FIXED, below hero, never scrolls ---- */
-[data-testid="stSidebar"] {
-    position: fixed !important;
-    top: 22vh !important;
-    left: 0 !important;
-    height: 78vh !important;
-    min-width: 240px !important;
-    max-width: 240px !important;
-    width: 240px !important;
-    background: #002663 !important;
-    overflow: hidden !important;
-    z-index: 900 !important;
-    padding: 0 !important;
-}
-
-[data-testid="stSidebar"] > div,
-[data-testid="stSidebarContent"] {
-    background: #002663 !important;
-    padding: 0 8px !important;
-    height: 100% !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-[data-testid="stSidebar"] p,
-[data-testid="stSidebar"] span,
-[data-testid="stSidebar"] div {
-    color: rgba(255,255,255,0.75) !important;
-}
-
-/* ---- E. Main area — offset by hero height + sidebar width ---- */
-/* messages live here; THIS is the only scrollable region */
-/* In this Streamlit version the main wrapper is an anonymous <div>
-   (stAppViewContainer's only div child; the sidebar is a <section>) */
-[data-testid="stAppViewContainer"] > div,
-[data-testid="stAppViewContainer"] > .main,
-section.main {
-    margin-top: 22vh !important;
-    margin-left: 240px !important;
-    height: 78vh !important;
-    overflow: hidden !important;
-    background: #F4F4F4 !important;
-}
-
-/* block-container testid changed to stMainBlockContainer in newer Streamlit */
+/* Remove Streamlit centered container */
+.main .block-container,
 [data-testid="stMainBlockContainer"],
-[data-testid="stAppViewBlockContainer"],
-.main .block-container {
-    max-width: 100% !important;
-    width: 100% !important;
-    padding: 1rem 1.5rem 1rem 1.5rem !important;
-    height: calc(78vh - 70px) !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+[data-testid="stAppViewBlockContainer"] {
+  max-width: 100vw !important;
+  width: 100vw !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #1A1446 !important;
 }
 
-/* ---- F. Sidebar quick-start buttons ---- */
-[data-testid="stSidebar"] .stButton > button {
-    background: transparent !important;
-    color: rgba(255,255,255,0.75) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    text-align: left !important;
-    width: 100% !important;
-    font-size: 13px !important;
-    padding: 8px 12px !important;
-    box-shadow: none !important;
-    margin-bottom: 2px !important;
-    justify-content: flex-start !important;
-}
-[data-testid="stSidebar"] .stButton > button p {
-    color: rgba(255,255,255,0.75) !important;
-    font-size: 13px !important;
-}
-[data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(255,255,255,0.1) !important;
-    color: #fff !important;
-}
-[data-testid="stSidebar"] .stButton > button:hover p {
-    color: #fff !important;
+section.main, [data-testid="stMain"] {
+  background: #1A1446 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
-/* ---- G. New Migration (primary) button — yellow ---- */
-[data-testid="stSidebar"] button[kind="primary"] {
-    background: #FFD000 !important;
-    color: #1A1446 !important;
-    font-weight: 600 !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 8px !important;
-}
-[data-testid="stSidebar"] button[kind="primary"] p {
-    color: #1A1446 !important;
-}
-[data-testid="stSidebar"] button[kind="primary"]:hover {
-    background: #E6BB00 !important;
+/* ── HIDE NATIVE SIDEBAR (we use columns instead) ── */
+[data-testid="stSidebar"] {
+  display: none !important;
+  width: 0 !important;
+  visibility: hidden !important;
 }
 
-/* ---- H. Chat bubbles ---- */
+/* ── LEFT COLUMN (our fake sidebar) ── */
+[data-testid="stHorizontalBlock"] > div:first-child {
+  background: #002663 !important;
+  height: calc(100vh - 260px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  padding-bottom: 0 !important;
+  border-right: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* New Migration button container — push to bottom of left column */
+[data-testid="stHorizontalBlock"] > div:first-child
+  > div:last-child {
+  margin-top: auto !important;
+  padding: 12px 8px !important;
+}
+
+[data-testid="stHorizontalBlock"] > div:first-child * {
+  color: rgba(255,255,255,0.75) !important;
+}
+
+/* Left column buttons — Quick Start */
+[data-testid="stHorizontalBlock"] > div:first-child
+  .stButton > button {
+  background: transparent !important;
+  color: rgba(255,255,255,0.75) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  text-align: left !important;
+  width: 100% !important;
+  font-size: 13px !important;
+  padding: 8px 12px !important;
+  box-shadow: none !important;
+  margin-bottom: 2px !important;
+  justify-content: flex-start !important;
+}
+
+[data-testid="stHorizontalBlock"] > div:first-child
+  .stButton > button p {
+  color: rgba(255,255,255,0.75) !important;
+  font-size: 13px !important;
+}
+
+[data-testid="stHorizontalBlock"] > div:first-child
+  .stButton > button:hover {
+  background: rgba(255,255,255,0.1) !important;
+}
+
+[data-testid="stHorizontalBlock"] > div:first-child
+  .stButton > button:hover p {
+  color: #FFFFFF !important;
+}
+
+/* New Migration button in left column */
+[data-testid="stHorizontalBlock"] > div:first-child
+  button[kind="primary"] {
+  background: #FFD000 !important;
+  color: #1A1446 !important;
+  font-weight: 600 !important;
+  width: calc(100% - 16px) !important;
+  margin: 4px 8px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[data-testid="stHorizontalBlock"] > div:first-child
+  button[kind="primary"] p {
+  color: #1A1446 !important;
+  font-weight: 600 !important;
+}
+
+/* ── RIGHT COLUMN (chat area) ── */
+[data-testid="stHorizontalBlock"] > div:last-child {
+  background: #F4F4F4 !important;
+  height: calc(100vh - 260px) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+}
+
+/* Chat message container — fills column, scrollable */
+[data-testid="stHorizontalBlock"] > div:last-child
+  [data-testid="stChatMessageContainer"] {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 16px 20px 80px 20px !important;
+  background: #F4F4F4 !important;
+}
+
+/* Chat input container — fixed to bottom, left set by JS */
+[data-testid="stHorizontalBlock"] > div:last-child
+  .stChatFloatingInputContainer,
+.stChatFloatingInputContainer {
+  position: fixed !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  background: #FFFFFF !important;
+  border-top: 0.5px solid rgba(26,20,70,0.13) !important;
+  padding: 12px 20px !important;
+  z-index: 999 !important;
+}
+
+/* ── CHAT BUBBLES ── */
 [data-testid="stChatMessageAvatarAssistant"],
 [data-testid="stChatMessageAvatarUser"] {
-    display: none !important;
+  display: none !important;
 }
+
 [data-testid="stChatMessage"] button,
 [data-testid="stCopyButton"] {
-    display: none !important;
+  display: none !important;
 }
 
-/* AI bubble */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
-    background: #fff !important;
-    border: 0.5px solid rgba(26,20,70,0.13) !important;
-    border-radius: 2px 12px 12px 12px !important;
-    padding: 10px 14px !important;
-    max-width: 80% !important;
-    align-self: flex-start !important;
-    margin-bottom: 10px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
-}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) * {
-    color: #1A1446 !important;
-    font-size: 13px !important;
+[data-testid="stChatMessage"]:has(
+  [data-testid="stChatMessageAvatarAssistant"]
+) {
+  background: #FFFFFF !important;
+  border: 0.5px solid rgba(26,20,70,0.13) !important;
+  border-radius: 2px 12px 12px 12px !important;
+  padding: 10px 14px !important;
+  max-width: 80% !important;
+  margin-bottom: 10px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
 }
 
-/* User bubble */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
-    background: #1A1446 !important;
-    border-radius: 12px 2px 12px 12px !important;
-    padding: 10px 14px !important;
-    max-width: 80% !important;
-    align-self: flex-end !important;
-    margin-left: auto !important;
-    margin-bottom: 10px !important;
-}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) * {
-    color: #fff !important;
-    font-size: 13px !important;
+[data-testid="stChatMessage"]:has(
+  [data-testid="stChatMessageAvatarAssistant"]
+) * {
+  color: #1A1446 !important;
+  font-size: 13px !important;
 }
 
-/* ---- I. Chat input — FIXED at bottom, offset by sidebar ---- */
-[data-testid="stChatInput"],
-.stChatFloatingInputContainer {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 240px !important;
-    right: 0 !important;
-    background: #fff !important;
-    border-top: 0.5px solid rgba(26,20,70,0.13) !important;
-    padding: 10px 16px !important;
-    z-index: 950 !important;
+[data-testid="stChatMessage"]:has(
+  [data-testid="stChatMessageAvatarUser"]
+) {
+  background: #1A1446 !important;
+  border-radius: 12px 2px 12px 12px !important;
+  padding: 10px 14px !important;
+  max-width: 80% !important;
+  margin-left: auto !important;
+  margin-bottom: 10px !important;
 }
+
+[data-testid="stChatMessage"]:has(
+  [data-testid="stChatMessageAvatarUser"]
+) * {
+  color: #FFFFFF !important;
+  font-size: 13px !important;
+}
+
+/* ── CHAT INPUT ── */
+[data-testid="stChatInput"] {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(26,20,70,0.2) !important;
+  border-radius: 10px !important;
+}
+
 [data-testid="stChatInput"] textarea {
-    background: #fff !important;
-    color: #1A1446 !important;
-    font-size: 13px !important;
+  background: #FFFFFF !important;
+  color: #1A1446 !important;
+  font-size: 13px !important;
 }
+
 [data-testid="stChatInput"] textarea::placeholder {
-    color: rgba(26,20,70,0.35) !important;
+  color: rgba(26,20,70,0.35) !important;
 }
+
 [data-testid="stChatInput"] button {
-    background: #FFD000 !important;
-    border-radius: 8px !important;
-    border: none !important;
+  background: #FFD000 !important;
+  border-radius: 8px !important;
+  border: none !important;
 }
+
 [data-testid="stChatInput"] button svg {
-    fill: #1A1446 !important;
+  fill: #1A1446 !important;
+}
+
+/* ── CHAT CONTAINER BACKGROUND (fallback) ── */
+[data-testid="stChatMessageContainer"] {
+  background: #F4F4F4 !important;
+}
+
+/* ── COLUMNS GAP REMOVAL ── */
+[data-testid="stHorizontalBlock"] {
+  gap: 0 !important;
+  padding: 0 !important;
 }
 
 </style>
-""", unsafe_allow_html=True)
+"""
+
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 # ── SECTION 4 — Constants ─────────────────────────────────────────────────────
 
@@ -298,8 +318,9 @@ _PILL = (
 )
 
 HERO_HTML = (
-# outer wrapper — targeted by #hero-bar CSS (position:fixed)
-'<div id="hero-bar">'
+# outer wrapper — inline styles provide background; no CSS id needed
+'<div style="width:100%;background:#1A1446;box-sizing:border-box;'
+'padding:16px 28px 0;font-family:system-ui,-apple-system,sans-serif;">'
 
 # ── ROW 1: logo + wordmark LEFT | status pill RIGHT ──────────────────────────
 '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1vh;">'
@@ -433,56 +454,130 @@ def build_last_migration_html() -> str:
         )
     return html
 
-# ── SECTION 8 — Render hero (fixed bar) ──────────────────────────────────────
+# ── SECTION 8 — Hero (full width, above columns) ─────────────────────────────
 
 st.markdown(HERO_HTML, unsafe_allow_html=True)
 
-# ── SECTION 9 — Sidebar (fixed) — flex column so New Migration sticks bottom ──
+# ── SECTION 9 — Two-column layout (sidebar + chat) ───────────────────────────
 
-with st.sidebar:
-    st.markdown(
-        '<span style="font-size:10px;font-weight:500;'
-        'color:rgba(255,255,255,0.35);text-transform:uppercase;'
-        'letter-spacing:0.08em;display:block;padding:16px 4px 8px 4px;">'
-        'Quick Start</span>',
-        unsafe_allow_html=True,
-    )
+col_sidebar, col_chat = st.columns([1, 4], gap="small")
 
-    if st.button("🗄  Postgres → BigQuery", key="qs1", use_container_width=True):
+# ── Left column — sidebar replacement ────────────────────────────────────────
+
+with col_sidebar:
+    st.markdown("""
+    <div style="
+      padding: 14px 4px 6px;
+      font-family: system-ui,-apple-system,sans-serif;
+    ">
+      <div style="
+        font-size: 10px; font-weight: 500;
+        color: rgba(255,255,255,0.35);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0 8px; margin-bottom: 6px;
+      ">Quick Start</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("🗄  Postgres → BigQuery",
+                 key="qs1", use_container_width=True):
         send_message("I want to migrate data from Postgres to BigQuery")
         st.rerun()
-    if st.button("📄  CSV → SQLite", key="qs2", use_container_width=True):
+
+    if st.button("📄  CSV → SQLite",
+                 key="qs2", use_container_width=True):
         send_message("I need to load a CSV file into SQLite")
         st.rerun()
-    if st.button("☁️  S3 → Snowflake", key="qs3", use_container_width=True):
+
+    if st.button("☁️  S3 → Snowflake",
+                 key="qs3", use_container_width=True):
         send_message("I want to migrate data from S3 to Snowflake")
         st.rerun()
-    if st.button("🍃  Mongo → S3", key="qs4", use_container_width=True):
+
+    if st.button("🍃  Mongo → S3",
+                 key="qs4", use_container_width=True):
         send_message("I want to export a MongoDB collection to S3")
         st.rerun()
 
-    st.markdown(
-        '<hr style="border:none;border-top:0.5px solid rgba(255,255,255,0.1);margin:12px 0;">',
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+    <hr style="border:none;
+      border-top:0.5px solid rgba(255,255,255,0.1);
+      margin:12px 0;">
+    """, unsafe_allow_html=True)
+
     st.markdown(build_last_migration_html(), unsafe_allow_html=True)
 
-    st.markdown('<div style="flex:1;"></div>', unsafe_allow_html=True)
+    st.markdown(
+        "<div style='flex:1; min-height:20px;'></div>",
+        unsafe_allow_html=True,
+    )
 
-    if st.button("＋ New Migration", key="reset", use_container_width=True, type="primary"):
+    if st.button("＋ New Migration", key="reset",
+                 use_container_width=True, type="primary"):
         st.session_state.agent.reset()
-        st.session_state.messages = [{"role": "assistant", "content": WELCOME_MESSAGE}]
+        st.session_state.messages = [
+            {"role": "assistant", "content": WELCOME_MESSAGE}
+        ]
         st.session_state.last_migrations = []
         st.rerun()
 
-# ── SECTION 10 — Chat messages (the ONLY scrollable region) ──────────────────
+# ── Right column — chat area ──────────────────────────────────────────────────
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+with col_chat:
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-# ── SECTION 11 — Chat input (fixed bottom) ───────────────────────────────────
+    if prompt := st.chat_input("Type your reply…"):
+        send_message(prompt)
+        st.rerun()
 
-if prompt := st.chat_input("Type your reply…"):
-    send_message(prompt)
-    st.rerun()
+# ── SECTION 10 — JS: pin input bar + sync sidebar bottom ─────────────────────
+
+st.markdown("""
+<script>
+(function() {
+  function fixLayout() {
+    var blocks = document.querySelectorAll(
+      '[data-testid="stHorizontalBlock"]'
+    );
+    if (!blocks.length) return;
+    var block = blocks[blocks.length - 1];
+    var cols = Array.from(block.children);
+    if (cols.length < 2) return;
+
+    var leftCol  = cols[0];
+    var rightCol = cols[cols.length - 1];
+    var rightRect = rightCol.getBoundingClientRect();
+    var leftPos   = Math.round(rightRect.left);
+
+    // Pin chat input bar to start of right column
+    var inputs = document.querySelectorAll(
+      '.stChatFloatingInputContainer'
+    );
+    inputs.forEach(function(el) {
+      el.style.setProperty('left',     leftPos + 'px', 'important');
+      el.style.setProperty('right',    '0',            'important');
+      el.style.setProperty('bottom',   '0',            'important');
+      el.style.setProperty('position', 'fixed',        'important');
+    });
+
+    // Sync left column bottom padding with input bar height
+    var inputBar = document.querySelector(
+      '.stChatFloatingInputContainer'
+    );
+    if (inputBar && leftCol) {
+      var h = inputBar.offsetHeight || 70;
+      leftCol.style.paddingBottom = h + 'px';
+    }
+  }
+
+  // Run multiple times to catch Streamlit's async renders
+  [300, 600, 1000, 2000].forEach(function(t) {
+    setTimeout(fixLayout, t);
+  });
+  window.addEventListener('resize', fixLayout);
+})();
+</script>
+""", unsafe_allow_html=True)
