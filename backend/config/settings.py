@@ -8,18 +8,21 @@ load_dotenv()
 # OpenAI-compatible provider (OpenAI, Gemini, Groq, Ollama, …)
 # ------------------------------------------------------------------
 
-# API key: LLM_API_KEY takes priority; falls back to OPENAI_API_KEY
+import json as _json
+
 LLM_API_KEY  = os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
-
-# Base URL: leave unset for OpenAI; point to any OpenAI-compatible endpoint
 LLM_BASE_URL = os.environ.get("LLM_BASE_URL") or None
-
-# Model name: any model the chosen provider supports
 LLM_MODEL    = (
     os.environ.get("LLM_MODEL")
     or os.environ.get("OPENAI_MODEL")
     or "gpt-4o"
 )
+
+# Optional extra headers sent on every LLM request.
+# Set as a JSON object in .env, e.g.:
+#   LLM_EXTRA_HEADERS={"use-case": "data-migration", "x-team": "platform"}
+_raw_headers  = os.environ.get("LLM_EXTRA_HEADERS", "")
+LLM_EXTRA_HEADERS: dict = _json.loads(_raw_headers) if _raw_headers.strip() else {}
 
 # ------------------------------------------------------------------
 # App / output settings

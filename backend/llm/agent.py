@@ -13,7 +13,7 @@ class MigrationAgent:
     - Maintains full conversation history per session
     - Passes tools from ToolRegistry to the OpenAI API
     - Detects tool_calls in responses and dispatches to registered handlers
-    - Returns plain-text responses back to the Gradio UI
+    - Returns plain-text responses back to the UI
     """
 
     def __init__(self, registry: ToolRegistry):
@@ -22,6 +22,8 @@ class MigrationAgent:
         client_kwargs = {"api_key": settings.LLM_API_KEY}
         if settings.LLM_BASE_URL:
             client_kwargs["base_url"] = settings.LLM_BASE_URL
+        if settings.LLM_EXTRA_HEADERS:
+            client_kwargs["default_headers"] = settings.LLM_EXTRA_HEADERS
         self.client = OpenAI(**client_kwargs)
         self.history: list[dict] = []   # full conversation history
 

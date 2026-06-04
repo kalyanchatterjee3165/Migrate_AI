@@ -53,3 +53,8 @@ gradio_cached_examples/
 # ── Logs ───────────────────────────────────────────────────────────
 *.log
 logs/
+
+# ── Node ───────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+.npm
