@@ -140,6 +140,13 @@ npm run dev          # http://localhost:5173
 # Backend — hot reload
 cd backend && uvicorn main:app --reload --port 8000
 
+# Frontend — Next.js dev server (http://localhost:3000)
+cd frontend-next && npm run dev
+
+# Both simultaneously:
+# Terminal 1: cd backend && uvicorn main:app --reload --port 8000
+# Terminal 2: cd frontend-next && npm run dev
+
 # Run tests (backend must be running first)
 cd backend && python test.py
 
