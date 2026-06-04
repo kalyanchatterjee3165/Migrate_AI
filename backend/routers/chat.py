@@ -6,6 +6,11 @@ router = APIRouter()
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: Request, body: ChatRequest) -> ChatResponse:
-    agent = request.app.state.agent
+    """
+    Send a message to the MigrateAI agent.
+    Each session_id has isolated conversation history.
+    """
+    sm = request.app.state.session_manager
+    agent = sm.get_agent(body.session_id)
     reply = agent.chat(body.message)
-    return ChatResponse(reply=reply)
+    return ChatResponse(reply=reply, session_id=body.session_id)

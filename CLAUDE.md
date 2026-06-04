@@ -55,10 +55,14 @@ migrate-ai/
 │   │
 │   ├── routers/
 │   │   ├── chat.py               # POST /api/chat
-│   │   └── session.py            # POST /api/reset · GET /api/status · GET /api/output
+│   │   ├── session.py            # POST /api/reset · GET /api/status · GET /api/output
+│   │   └── migrations.py         # POST /api/migrate · GET /api/migrate/types
 │   │
 │   ├── schemas/
 │   │   └── chat.py               # Pydantic models: ChatRequest, ChatResponse, …
+│   │
+│   ├── middleware/
+│   │   └── session_manager.py    # Thread-safe per-session MigrationAgent registry
 │   │
 │   ├── llm/
 │   │   ├── agent.py              # MigrationAgent — chat loop + tool dispatch
@@ -136,6 +140,12 @@ npm run dev          # http://localhost:5173
 # Backend — hot reload
 cd backend && uvicorn main:app --reload --port 8000
 
+# Run tests (backend must be running first)
+cd backend && python test.py
+
+# View API docs
+open http://localhost:8000/docs
+
 # Frontend — Vite dev server
 cd frontend && npm run dev
 
@@ -150,9 +160,6 @@ ls backend/output/
 
 # Python lint
 cd backend && flake8 . --max-line-length=100
-
-# Python tests (once added)
-cd backend && pytest tests/
 ```
 
 ---
@@ -197,12 +204,18 @@ LLM_EXTRA_HEADERS={"use-case": "data-migration", "x-team": "platform"}
 
 ## API Endpoints
 
-| Method | Path          | Description                              |
-|--------|---------------|------------------------------------------|
-| POST   | `/api/chat`   | Send a message, receive agent reply      |
-| POST   | `/api/reset`  | Clear conversation + agent history       |
-| GET    | `/api/status` | Health check — returns model + connected |
-| GET    | `/api/output` | List files in `backend/output/`          |
+| Method | Path                        | Description                                      |
+|--------|-----------------------------|--------------------------------------------------|
+| GET    | `/`                         | Health root — name, version, status              |
+| GET    | `/api/status`               | Model info + active session count                |
+| POST   | `/api/chat`                 | Send message to agent (session-isolated)         |
+| POST   | `/api/reset`                | Clear session conversation history               |
+| DELETE | `/api/session/{id}`         | Remove a session and free its memory             |
+| GET    | `/api/sessions`             | List all active session IDs                      |
+| GET    | `/api/output`               | List files in `backend/output/`                  |
+| GET    | `/files/{filename}`         | Download an output file                          |
+| POST   | `/api/migrate`              | Directly trigger a migration (bypass agent)      |
+| GET    | `/api/migrate/types`        | List migration types + required config fields    |
 
 Interactive docs: **http://localhost:8000/docs**
 
